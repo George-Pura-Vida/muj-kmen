@@ -1,0 +1,7 @@
+/config.local.php
+/var/*
+!/var/.htaccess
+*.sqlite*
+*.log
+/import-private.json
+/.env
