@@ -5,3 +5,5 @@
 *.log
 /import-private.json
 /.env
+/.sites-runtime/
+/.openai/

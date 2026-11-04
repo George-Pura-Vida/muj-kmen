@@ -1,0 +1,17 @@
+name: Verify Můj kmen
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP and SQLite
+        run: sudo apt-get update && sudo apt-get install -y php-cli php-sqlite3
+      - name: JavaScript syntax and model tests
+        run: |
+          node --check assets/app.js
+          node --test tests/model.test.mjs
+      - name: PHP integration tests
+        run: python3 tests/api_test.py

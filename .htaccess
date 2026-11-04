@@ -1,0 +1,10 @@
+Options -Indexes
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^(?:var|tools|tests|preview|\.git|\.github|\.openai)(?:/|$) - [F,L]
+RewriteRule ^(?:app\.html|config\.[^/]+|README\.md|.*\.sqlite.*|.*\.json)$ - [F,L,NC]
+</IfModule>
+<FilesMatch "^(config\..*|bootstrap\.php|.*\.sqlite.*|.*\.log)$">
+Require all denied
+</FilesMatch>
+DirectoryIndex index.php
