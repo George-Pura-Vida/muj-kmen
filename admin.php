@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-define('AUTH_ADMIN_PAGE', true);
-$_GET['view'] = 'approvals';
-require __DIR__.'/account.php';
-
+require __DIR__.'/auth/bootstrap.php';
+auth_boot();
+auth_require();
+auth_redirect('profile','Můj kmen je pouze pro jediného správce. Přidávání dalších uživatelů není povoleno.');

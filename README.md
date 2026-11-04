@@ -18,7 +18,7 @@ Data se standardně ukládají **mimo kořen domény**: do sousedních adresář
 
 Přihlášení, registrace, ikona oka, potvrzení e-mailu, obnova hesla, profil a správa uživatelů vycházejí z modulu aplikace Moje renta. Přihlášení je e-mailem a heslem (minimálně 7 znaků), hesla se ukládají jako hash. Ověřovací odkaz má platnost 24 hodin, obnovovací 30 minut. Změna hesla ukončí původní relace.
 
-Správcem je po ověření adresy provozovatel uvedený v `AUTH_APPROVER_EMAIL` v `auth/bootstrap.php`. **Ostatní účty jsou po registraci a ověření e-mailu stále čekající**, dokud správce nepovolí přístup. Povolený účet získá přístup ke společnému klientskému kmeni a zápisům. Samotná registrace nesmí odhalit klientská data. Importovat může pouze správce.
+Správcem je výhradně ověřený provozovatel uvedený v `AUTH_APPROVER_EMAIL`. Jednorázová aktivace dovoluje pouze tuto pevnou e-mailovou adresu. **Registrace i přihlášení jiných uživatelů jsou serverově zakázané**, a to i pro dříve uložené nebo ručně schválené jiné účty. Povolování dalších uživatelů je vypnuté. Profil správce obsahuje změnu hesla a obnovu přístupu.
 
 Do tohoto veřejného repozitáře nepatří žádná klientská data, databáze, konfigurace ani hesla. Nejsou tu přednastavená produkční hesla. Připravený klientský import je samostatný soukromý JSON soubor. Import přidává nové profily a nepřepisuje existující úpravy; opakování importu nevytváří duplikáty. Záloha zahrnuje klienty i nové zápisy. CSV výběru obsahuje pouze zobrazené klienty a chrání tabulku před vzorci z textových polí.
 

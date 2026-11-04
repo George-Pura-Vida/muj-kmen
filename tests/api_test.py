@@ -57,22 +57,15 @@ def run():
     data=owner.api('data')[1];assert len(data['entries'])==1 and data['clients'][0]['nextContact']=='2026-11-07'
     backup=owner.api('export')[1];assert backup['clients'][0]['group']=='B' and len(backup['entries'])==1
     invalid={'format':'muj-kmen','version':1,'clients':[{**c,'id':'test-2','nextContact':'2026-02-31'}]};assert owner.api('import',invalid)[0]==422
-    pending=Session(base);pending.token();assert register(pending,'pending@example.test','Pending')[0]==200
-    tok=next(x for x in outbox() if x['to']=='pending@example.test' and x['purpose']=='verify')['url'].split('#token=')[1]
-    pending.form('verify',{'token':tok});assert pending.api('data')[0]==401
-    pending.token();pending.form('login',{'email':'pending@example.test','password':password});assert pending.api('data')[0]==401
-    # Pending access must remain pending across subsequent requests.
-    assert pending.api('data')[0]==401
-    uid=__import__('sqlite3').connect(t/'auth/accounts.sqlite').execute("SELECT id FROM users WHERE email='pending@example.test'").fetchone()[0]
-    owner.csrf=owner.api('bootstrap')[1]['csrf'];assert owner.form('approval',{'user_id':uid,'decision':'approved'})[0]==200
-    pending.token();pending.form('login',{'email':'pending@example.test','password':password});pending.csrf=pending.api('bootstrap')[1]['csrf'];assert pending.api('data')[0]==200
-    assert pending.api('import',seed)[0]==403
-    recovery=Session(base);recovery.token();recovery.form('forgot',{'email':'pending@example.test'})
-    tok=[x for x in outbox() if x['to']=='pending@example.test' and x['purpose']=='reset'][-1]['url'].split('#token=')[1]
+    other=Session(base);other.token();assert register(other,'pending@example.test','Other')[0]==403
+    other.form('login',{'email':'pending@example.test','password':password});assert other.api('data')[0]==401
+    assert __import__('sqlite3').connect(t/'auth/accounts.sqlite').execute('SELECT COUNT(*) FROM users').fetchone()[0]==1
+    recovery=Session(base);recovery.token();recovery.form('forgot',{'email':'jgjanousek@gmail.com'})
+    tok=[x for x in outbox() if x['to']=='jgjanousek@gmail.com' and x['purpose']=='reset'][-1]['url'].split('#token=')[1]
     recovery.form('reset',{'token':tok,'password':'Different-test-password-642!','password_confirm':'Different-test-password-642!'})
-    assert pending.api('data')[0]==401
+    assert owner.api('data')[0]==401
     assert recovery.form('reset',{'token':tok,'password':password,'password_confirm':password})[0] in [200,403]
-    print('PASS: PHP syntax; unauthenticated denial; registration and verification; pending account gate; admin approval; six products; CSRF; import duplicate handling; optimistic locking; notes persisted and idempotent; backup; invalid date; reset invalidates sessions.')
+    print('PASS: PHP syntax; unauthenticated denial; registration and verification; owner-only registration and login; six products; CSRF; import duplicate handling; optimistic locking; notes persisted and idempotent; backup; invalid date; reset invalidates sessions.')
    except Exception:
     logs.flush();print((t/'server.log').read_text()[-3000:]);raise
    finally:server.terminate();server.wait(timeout=10)

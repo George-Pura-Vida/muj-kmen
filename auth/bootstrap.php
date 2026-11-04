@@ -82,9 +82,10 @@ function auth_is_admin(array $u): bool {
     return (bool)$u['verified'] && strtolower($u['email']) === AUTH_APPROVER_EMAIL;
 }
 function auth_approved(array $u): bool {
-    return auth_is_admin($u) || ($u['approval_status'] ?? 'pending') === 'approved';
+    return auth_is_admin($u);
 }
 function auth_login(array $u): void {
+    if (!auth_is_admin($u)) { http_response_code(403); throw new DomainException('Aplikace je vyhrazena pouze správci.'); }
     session_regenerate_id(true);
     $_SESSION = ['uid' => (int)$u['id'], 'version' => (int)$u['session_version'],
         'started' => time(), 'seen' => time(), 'csrf' => bin2hex(random_bytes(32))];
@@ -174,7 +175,9 @@ function auth_process(?array $u): void {
     auth_limit('post-ip',$ip,150,900);
     if ($action === 'register') {
         auth_limit('register-ip',$ip,10,3600);
-        $email=auth_email(); $p=auth_profile(); $password=auth_password();
+        $email=auth_email();
+        if ($email !== AUTH_APPROVER_EMAIL) { http_response_code(403); throw new DomainException('Registrace dalších uživatelů není povolena. Aplikace je určena pouze správci.'); }
+        $p=auth_profile(); $password=auth_password();
         if (auth_text('privacy',3) !== 'yes') throw new DomainException('Potvrďte seznámení se zpracováním údajů.');
         $existing=auth_query('SELECT * FROM users WHERE email=?',[$email])->fetch(PDO::FETCH_ASSOC);
         if (!$existing) {
@@ -191,7 +194,7 @@ function auth_process(?array $u): void {
     if ($action === 'login') {
         $email=auth_email(); auth_limit('login-email',$email,10,900); auth_limit('login-ip',$ip,40,900);
         $p=$_POST['password']??'';
-        $found=auth_query('SELECT * FROM users WHERE email=?',[$email])->fetch(PDO::FETCH_ASSOC);
+        $found=$email===AUTH_APPROVER_EMAIL?auth_query('SELECT * FROM users WHERE email=?',[$email])->fetch(PDO::FETCH_ASSOC):false;
         // Valid dummy bcrypt hash also makes unknown-account failures run password_verify.
         $dummy='$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.';
         $ok=is_string($p)&&strlen($p)<=72&&password_verify($p,$found['password_hash']??$dummy);
@@ -244,6 +247,7 @@ function auth_process(?array $u): void {
         auth_redirect('approvals','Účet a jeho údaje byly trvale smazány. Původní přihlášení a ověřovací odkazy již nelze použít.');
     }
     if ($action === 'approval') {
+        http_response_code(403); throw new DomainException('Povolování dalších účtů je vypnuté. Aplikace je vyhrazena pouze správci.');
         if (!auth_is_admin($u)) { http_response_code(403); throw new DomainException('Tuto akci může provést pouze správce.'); }
         $target=auth_text('user_id',20,true); $decision=auth_text('decision',20,true);
         if (!ctype_digit($target) || !in_array($decision,['approved','rejected','pending'],true)) throw new DomainException('Neplatná změna přístupu.');
