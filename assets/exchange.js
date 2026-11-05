@@ -5,7 +5,17 @@ const norm=v=>fold(v).trim().replace(/\s+/g,' ');
 export function detectColumns(row){const result={};for(const [k,list] of Object.entries(aliases)){const i=row.findIndex(v=>list.includes(norm(v)));if(i>=0)result[k]=i;}return result;}
 export function detectHeader(rows){let best={index:0,map:{},score:0};rows.slice(0,50).forEach((r,index)=>{const map=detectColumns(r);const score=Object.keys(map).length+((map.firstName!==undefined&&map.lastName!==undefined)||map.fullName!==undefined?4:0);if(score>best.score)best={index,map,score};});return best;}
 export function productState(v){const s=norm(v);if(['record','confirmed','interest','verify'].includes(s))return s;if(!s||/📞|telefon|overit|neznam|^ne$|^no$|^0$|^false$|^-$|^x$|nema|odmit/.test(s))return 'verify';if(/zajem|nabid|potencial/.test(s))return 'interest';if(/🟨|⬜|⊕|₿|🇨🇭|🛡|✅|ano|potvrzen|ma fond|ma dip|ma zlato|ma stribro|^1$|^true$/.test(s))return 'record';return 'verify';}
-export function amountValue(v){if(typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=1e13)return v;let s=String(v??'').trim().replace(/Kč|CZK/gi,'').replace(/[\s\u00a0]/g,'');if(!s)return 0;if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');if(!/^\d+(\.\d+)?$/.test(s)||!Number.isFinite(Number(s))||Number(s)>1e13)throw Error('Neplatný objem: '+String(v).slice(0,60));return Number(s);}
+export function amountValue(v){
+ if(typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=1e13)return v;
+ let s=String(v??'').trim().replace(/Kč|CZK/gi,'').replace(/[\s\u00a0]/g,'');
+ if(!s)return 0;
+ if(/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s))s=s.replace(/,/g,'');
+ else if(/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');
+ else if(/^\d{1,3}(\.\d{3}){2,}$/.test(s))s=s.replace(/\./g,'');
+ else if(/^\d+,\d+$/.test(s))s=s.replace(',','.');
+ if(!/^\d+(\.\d+)?$/.test(s)||!Number.isFinite(Number(s))||Number(s)>1e13)throw Error('Neplatný objem: '+String(v).slice(0,60));
+ return Number(s);
+}
 export function rowsToClients(rows,map,headerIndex=0){
  if(!('fullName'in map)&&!('firstName'in map)&&!('lastName'in map))throw Error('Přiřaďte jméno, příjmení nebo celé jméno.');
  const clients=[],errors=[],ids=new Set();

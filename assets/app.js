@@ -1,4 +1,4 @@
-import {FIELDS,detectHeader,rowsToClients,excelBook,exportPDF} from './exchange.js';
+import {FIELDS,detectHeader,rowsToClients,excelBook,exportPDF} from './exchange.js?v=20261105-amounts';
 import {PRODUCTS,GROUPS,COLORS,isProduct,filterClients,statistics,toCsv,dateToday} from './model.js';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
