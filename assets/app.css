@@ -25,3 +25,29 @@
 main{margin-left:264px}
 @media(max-width:800px){.sidebar{width:min(290px,88vw)}main{margin-left:0}}
 @media print{main{margin-left:0}}
+
+/* Comfortable reading size across the workspace. */
+.topbar,.today,.top-search input,.page-heading p,.primary,.secondary,.text-button{font-size:14px}
+.eyebrow{font-size:11px}.kpi-top{font-size:14px}.kpi-footer{font-size:13px;line-height:1.6}
+.product-card-top,.product-card-bottom{font-size:13px;line-height:1.5}.product-card-bottom{flex-wrap:wrap;gap:5px}
+.product-number small,.muted,.panel-heading p,.tag{font-size:12px}.panel-heading h2{font-size:18px}
+.legend-row,.legend-row small,.bar-row,.bar-row>strong{font-size:14px}
+.legend-row small{width:58px;color:#526347}.chart-legend{gap:16px}.bar-row{grid-template-columns:90px 1fr 105px;gap:12px}
+.chart-percent{display:block;font-size:12px;color:#526347;margin-top:4px}.bar-track{height:16px}.donut-center small{font-size:12px}
+.item-main h3,.client-name,.entry-panel input,label,input,textarea,select{font-size:14px}
+.item-main p,.item-type,.filter-row label,.filter-row select,.client-name small,.action-cell,.contact-date,.pagination,.table-top,.table-top span,.group-chip{font-size:13px}
+.item-main p{line-height:1.7}.client-table{font-size:14px;min-width:1400px}.client-table th{font-size:12px}.table-wrap{overflow-x:auto}
+.product-editor label,.product-editor select,.evidence-card,.details-summary small,.dialog-tabs button{font-size:13px}
+.data-note,.empty,.form-error,.entry-item .when,.group-badge{font-size:13px;line-height:1.7}
+:root{--muted:#59695e}.kpi-top,.kpi-footer,.muted,.panel-heading p,.item-main p,.contact-date,.action-cell,.filter-row label,.table-top span,.client-name small{color:#59695e}
+.bulk-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:15px 18px;margin-bottom:16px}
+.bulk-actions>span{font-size:14px;font-weight:600}.row-actions{display:flex;gap:8px}
+.danger-button{background:#fff2ef;color:#8c3028;border:1px solid #c9796e;border-radius:6px;padding:9px 12px;font-size:14px}
+.danger-button:hover{background:#fbded7}.selection-cell input{width:19px;height:19px;accent-color:#315b4b;cursor:pointer}
+.trash-row{display:flex;gap:16px;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.trash-row small{display:block;color:#59695e;font-size:12px;margin-top:5px}
+#delete-summary{font-size:15px;line-height:1.8}.chart-tooltip{position:fixed;z-index:2000;max-width:min(360px,calc(100vw - 16px));pointer-events:none;background:#18342d;color:#fff;border:1px solid #d6b65b;border-radius:8px;padding:12px 15px;font-size:14px;line-height:1.6;box-shadow:0 6px 24px #18342d33}
+[data-chart-tip]{cursor:help}.product-card[data-chart-tip]{cursor:pointer}
+@media(max-width:1200px){.chart-grid{grid-template-columns:1fr}.donut-layout{flex-direction:row}.chart-legend{grid-template-columns:1fr}.product-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:800px){.topbar{gap:10px}.today{font-size:12px}.top-search input{font-size:13px}.page-heading p,.page-heading>.primary{font-size:13px}.eyebrow{font-size:10px}.product-grid{grid-template-columns:repeat(2,1fr)}.product-card-top,.product-card-bottom{font-size:13px}.section-top .muted{font-size:12px}.section-top{flex-wrap:wrap}.section-top .muted{max-width:none;text-align:left}.donut-layout{flex-wrap:wrap}.bar-row{grid-template-columns:80px 1fr 95px;font-size:13px}.entry-item .when{font-size:12px}.dialog-tabs button{font-size:13px}.bulk-actions button{flex:1;min-width:140px}}
+@media print{.bulk-actions,.row-actions,.selection-cell,.chart-tooltip{display:none!important}}

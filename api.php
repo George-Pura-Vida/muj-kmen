@@ -13,8 +13,8 @@ try {
  if($action==='bootstrap' && $method==='GET'){echo json_encode(['version'=>MK_VERSION,'csrf'=>$_SESSION['csrf'],'user'=>$mkUser?['id'=>$mkUser['id'],'name'=>$mkUser['first_name'].' '.$mkUser['last_name'],'isAdmin'=>auth_is_admin($mkUser)]:null],JSON_UNESCAPED_UNICODE);exit;}
  if(!$mkUser)fail(401,'Přihlaste se prosím.');
  if($action==='logout' && $method==='POST'){auth_logout();echo '{"ok":true}';exit;}
- if($action==='data' && $method==='GET'){echo json_encode(['clients'=>clients_list($db),'entries'=>$db->query('SELECT * FROM entries ORDER BY occurred_at DESC,created_at DESC')->fetchAll(PDO::FETCH_ASSOC)],JSON_UNESCAPED_UNICODE);exit;}
- if($action==='export' && $method==='GET'){header('Content-Disposition: attachment; filename="muj-kmen-zaloha-'.date('Y-m-d').'.json"');echo json_encode(['format'=>'muj-kmen','version'=>1,'exportedAt'=>gmdate(DATE_ATOM),'clients'=>clients_list($db),'entries'=>$db->query('SELECT * FROM entries')->fetchAll(PDO::FETCH_ASSOC)],JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);exit;}
+ if($action==='data' && $method==='GET'){echo json_encode(['clients'=>clients_list($db),'entries'=>$db->query('SELECT entries.* FROM entries JOIN clients ON clients.id=entries.client_id WHERE clients.deleted_at=\'\' ORDER BY occurred_at DESC,created_at DESC')->fetchAll(PDO::FETCH_ASSOC)],JSON_UNESCAPED_UNICODE);exit;}
+ if($action==='export' && $method==='GET'){header('Content-Disposition: attachment; filename="muj-kmen-zaloha-'.date('Y-m-d').'.json"');echo json_encode(['format'=>'muj-kmen','version'=>1,'exportedAt'=>gmdate(DATE_ATOM),'clients'=>clients_list($db),'entries'=>$db->query('SELECT entries.* FROM entries JOIN clients ON clients.id=entries.client_id WHERE clients.deleted_at=\'\'')->fetchAll(PDO::FETCH_ASSOC)],JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);exit;}
  if($action==='import' && $method==='POST'){
   if(!auth_is_admin($mkUser))fail(403,'Import může provést pouze správce.');
   if(($in['format']??'')!=='muj-kmen' || ($in['version']??0)!==1 || !is_array($in['clients']??null) || count($in['clients'])>10000)fail(422,'Vyberte platný import Můj kmen (verze 1).');
@@ -25,12 +25,32 @@ try {
   $notesAdded=0;foreach($entries as $e){if(!is_array($e)||!preg_match('/^[A-Za-z0-9_-]{1,80}$/D',(string)($e['id']??'')))throw new InvalidArgumentException('Neplatný zápis.');$q=$db->prepare('SELECT 1 FROM clients WHERE id=?');$q->execute([(string)($e['client_id']??'')]);if(!$q->fetchColumn())throw new InvalidArgumentException('Zápis bez klienta.');$kind=$e['kind']??'note';if(!in_array($kind,['phone','meeting','email','note'],true))throw new InvalidArgumentException('Neplatný druh zápisu.');$date=valid_date(substr((string)($e['occurred_at']??''),0,10));if($date==='')throw new InvalidArgumentException('Neplatné datum zápisu.');$q=$db->prepare('INSERT OR IGNORE INTO entries VALUES(?,?,?,?,?,?,?)');$q->execute([(string)$e['id'],(string)$e['client_id'],$kind,clean_text($e['body']??'',5000),clean_text($e['result']??'',1000),$date,gmdate(DATE_ATOM)]);$notesAdded+=$q->rowCount();}
   $db->commit();echo json_encode(['ok'=>true,'added'=>$added,'skipped'=>$skipped,'notesAdded'=>$notesAdded]);exit;
  }
+
+ if($action==='trash' && $method==='GET'){
+  if(!auth_is_admin($mkUser))fail(403,'Pouze správce.');
+  $items=[];foreach($db->query("SELECT * FROM clients WHERE deleted_at<>'' ORDER BY deleted_at DESC") as $row){$c=json_decode($row['payload'],true,512,JSON_THROW_ON_ERROR);$items[]=['id'=>$row['id'],'firstName'=>$c['firstName'],'lastName'=>$c['lastName'],'deletedAt'=>$row['deleted_at']];}
+  echo json_encode(['clients'=>$items],JSON_UNESCAPED_UNICODE);exit;
+ }
+ if(in_array($action,['delete-clients','restore-clients'],true) && $method==='POST'){
+  if(!auth_is_admin($mkUser))fail(403,'Pouze správce může mazat a obnovovat klienty.');
+  $items=$in['clients']??null;if(!is_array($items)||!count($items)||count($items)>10000)fail(422,'Vyberte klienty.');
+  $db->beginTransaction();$seen=[];$count=0;
+  foreach($items as $item){
+   if(!is_array($item)||!preg_match('/^[A-Za-z0-9_-]{1,64}$/D',(string)($item['id']??'')))throw new InvalidArgumentException('Neplatné ID klienta.');
+   $id=$item['id'];if(isset($seen[$id]))throw new InvalidArgumentException('Duplicitní klient.');$seen[$id]=true;
+   if($action==='delete-clients'){$q=$db->prepare("UPDATE clients SET deleted_at=?,revision=revision+1,updated_at=? WHERE id=? AND revision=? AND deleted_at=''");$now=gmdate(DATE_ATOM);$q->execute([$now,$now,$id,(int)($item['revision']??0)]);}
+   else{$q=$db->prepare("UPDATE clients SET deleted_at='',revision=revision+1,updated_at=? WHERE id=? AND deleted_at<>''");$q->execute([gmdate(DATE_ATOM),$id]);}
+   if(!$q->rowCount()){$db->rollBack();fail(409,'Klient byl mezitím změněn. Obnovte seznam a zopakujte akci.');}$count++;
+  }
+  $db->commit();echo json_encode(['ok'=>true,'count'=>$count]);exit;
+ }
+
  if($action==='client' && $method==='POST'){
-  $c=normal_client($in['client']??[]);$revision=(int)($in['revision']??0);$q=$db->prepare('UPDATE clients SET payload=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?');$q->execute([json_encode($c,JSON_UNESCAPED_UNICODE),gmdate(DATE_ATOM),$c['id'],$revision]);if(!$q->rowCount())fail(409,'Klient byl mezitím změněn. Obnovte data a zopakujte úpravu.');echo '{"ok":true}';exit;
+  $c=normal_client($in['client']??[]);$revision=(int)($in['revision']??0);$q=$db->prepare('UPDATE clients SET payload=?,revision=revision+1,updated_at=? WHERE id=? AND revision=? AND deleted_at=\'\'');$q->execute([json_encode($c,JSON_UNESCAPED_UNICODE),gmdate(DATE_ATOM),$c['id'],$revision]);if(!$q->rowCount())fail(409,'Klient byl mezitím změněn. Obnovte data a zopakujte úpravu.');echo '{"ok":true}';exit;
  }
  if($action==='entry' && $method==='POST'){
   $id=clean_text($in['id']??'',80);if(!preg_match('/^[A-Za-z0-9_-]{1,80}$/D',$id))fail(422,'Neplatné ID zápisu.');$client=(string)($in['clientId']??'');$body=clean_text($in['body']??'',5000);$kind=$in['kind']??'note';$date=valid_date($in['date']??'');if($body===''||$date===''||!in_array($kind,['phone','meeting','email','note'],true))fail(422,'Doplňte text, datum a druh zápisu.');
-  $db->beginTransaction();$q=$db->prepare('SELECT payload,revision FROM clients WHERE id=?');$q->execute([$client]);$r=$q->fetch(PDO::FETCH_ASSOC);if(!$r){$db->rollBack();fail(404,'Klient nebyl nalezen.');}
+  $db->beginTransaction();$q=$db->prepare('SELECT payload,revision FROM clients WHERE id=? AND deleted_at=\'\'');$q->execute([$client]);$r=$q->fetch(PDO::FETCH_ASSOC);if(!$r){$db->rollBack();fail(404,'Klient nebyl nalezen.');}
   $q=$db->prepare('SELECT 1 FROM entries WHERE id=?');$q->execute([$id]);if($q->fetchColumn()){$db->commit();echo '{"ok":true,"duplicate":true}';exit;}
   if((int)($in['revision']??0)!==(int)$r['revision']){$db->rollBack();fail(409,'Klient byl mezitím změněn. Obnovte data a zápis zopakujte.');}
   $c=json_decode($r['payload'],true,512,JSON_THROW_ON_ERROR);$c['nextAction']=clean_text($in['nextAction']??$c['nextAction'],1500);$c['nextContact']=valid_date($in['nextContact']??$c['nextContact']);

@@ -55,6 +55,24 @@ def run():
     assert owner.api('entry',note)[1]['duplicate']
     data=owner.api('data')[1];assert len(data['entries'])==1 and data['clients'][0]['nextContact']=='2026-11-07'
     backup=owner.api('export')[1];assert backup['clients'][0]['group']=='B' and len(backup['entries'])==1
+    # Deletion is reversible, revision checked, atomic, and preserves notes.
+    current=owner.api('data')[1]['clients'][0]
+    assert owner.api('delete-clients',{'clients':[{'id':current['id'],'revision':current['revision']}]},csrf=False)[0]==403
+    assert owner.api('delete-clients',{'clients':[{'id':current['id'],'revision':0}]})[0]==409
+    assert len(owner.api('data')[1]['clients'])==1
+    assert owner.api('delete-clients',{'clients':[{'id':current['id'],'revision':current['revision']},{'id':'missing','revision':1}]})[0]==409
+    assert len(owner.api('data')[1]['clients'])==1
+    assert owner.api('delete-clients',{'clients':[{'id':current['id'],'revision':current['revision']}]})[1]['count']==1
+    assert owner.api('data')[1]=={'clients':[],'entries':[]}
+    assert owner.api('export')[1]['entries']==[]
+    assert owner.api('client',{'client':current,'revision':current['revision']+1})[0]==409
+    assert owner.api('entry',{**note,'id':'note-after-delete'})[0]==404
+    assert len(owner.api('trash')[1]['clients'])==1
+    assert owner.api('restore-clients',{'clients':[{'id':current['id']}]})[1]['count']==1
+    restored=owner.api('data')[1]
+    assert len(restored['clients'])==1 and len(restored['entries'])==1
+    assert restored['clients'][0]['nextContact']=='2026-11-07'
+    assert owner.api('trash')[1]['clients']==[]
     invalid={'format':'muj-kmen','version':1,'clients':[{**c,'id':'test-2','nextContact':'2026-02-31'}]};assert owner.api('import',invalid)[0]==422
     other=Session(base);other.token();assert register(other,'pending@example.test','Other')[0]==403
     other.form('login',{'email':'pending@example.test','password':password});assert other.api('data')[0]==401

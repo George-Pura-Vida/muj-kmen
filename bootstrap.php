@@ -15,6 +15,7 @@ function database(): PDO {
  $db=new PDO('sqlite:'.$dir.'/muj-kmen.sqlite',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
  $db->exec('PRAGMA foreign_keys=ON'); $db->exec('PRAGMA busy_timeout=5000');
  $db->exec('CREATE TABLE IF NOT EXISTS clients(id TEXT PRIMARY KEY, payload TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1, updated_at TEXT NOT NULL)');
+ $columns=$db->query('PRAGMA table_info(clients)')->fetchAll(PDO::FETCH_ASSOC);if(!in_array('deleted_at',array_column($columns,'name'),true))$db->exec("ALTER TABLE clients ADD COLUMN deleted_at TEXT NOT NULL DEFAULT ''");
  $db->exec('CREATE TABLE IF NOT EXISTS entries(id TEXT PRIMARY KEY, client_id TEXT NOT NULL REFERENCES clients(id), kind TEXT NOT NULL, body TEXT NOT NULL, result TEXT NOT NULL, occurred_at TEXT NOT NULL, created_at TEXT NOT NULL)');
  return $db;
 }
@@ -28,4 +29,4 @@ function normal_client(array $c): array {
  $products=[];foreach(['gold','silver','funds','bitcoin','swiss','insurance'] as $key){$p=$c['products'][$key]??[]; $state=$p['state']??'verify'; if(!in_array($state,['record','confirmed','interest','verify'],true))fail(422,'Neplatný stav produktu.');$products[$key]=['state'=>$state,'evidence'=>clean_text($p['evidence']??'',2000)];}
  return ['id'=>$id,'firstName'=>$first,'lastName'=>$last,'group'=>$g,'amount'=>(float)$amount,'products'=>$products,'tradePotential'=>clean_text($c['tradePotential']??'',2000),'cooperationPotential'=>clean_text($c['cooperationPotential']??'',2000),'tradePriority'=>(bool)($c['tradePriority']??false),'cooperationPriority'=>(bool)($c['cooperationPriority']??false),'sourceNote'=>clean_text($c['sourceNote']??'',5000),'nextAction'=>clean_text($c['nextAction']??'',1500),'nextContact'=>valid_date($c['nextContact']??''),'sourceDate'=>valid_date($c['sourceDate']??'')];
 }
-function clients_list(PDO $db): array {$r=[];foreach($db->query('SELECT * FROM clients') as $row){$c=json_decode($row['payload'],true,512,JSON_THROW_ON_ERROR);$c['revision']=(int)$row['revision'];$c['updatedAt']=$row['updated_at'];$r[]=$c;}return $r;}
+function clients_list(PDO $db): array {$r=[];foreach($db->query('SELECT * FROM clients WHERE deleted_at=\'\'') as $row){$c=json_decode($row['payload'],true,512,JSON_THROW_ON_ERROR);$c['revision']=(int)$row['revision'];$c['updatedAt']=$row['updated_at'];$r[]=$c;}return $r;}
