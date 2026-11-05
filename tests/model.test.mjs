@@ -7,3 +7,8 @@ test('product icon and phone filters are complementary',()=>{const a=filterClien
 test('statistics reconcile groups and six products',()=>{const s=statistics(demoClients);assert.equal(s.groups.reduce((n,g)=>n+g.count,0),s.total);assert.equal(s.products.length,6);for(const p of s.products)assert.equal(p.count+p.verify,s.total);assert.equal(s.trade,3);assert.equal(s.cooperation,2);});
 test('due dates use local date and ignore empty next contacts',()=>{const a=[{...demoClients[0],nextContact:'2026-11-04'},{...demoClients[1],nextContact:'2026-11-06'},{...demoClients[2],nextContact:''}];assert.equal(filterClients(a,{priority:'due'},'2026-11-04').length,1);});
 test('CSV neutralizes formula injection and escapes quotes',()=>{const s=toCsv([{...demoClients[0],firstName:'=HYPERLINK("x")'}]);assert.ok(s.includes("'=HYPERLINK"));assert.ok(s.includes('""x""'));});
+
+test('five groups reconcile and E represents unassigned clients',()=>{
+ const clients=[{...demoClients[0],group:'A',amount:100},{...demoClients[1],group:'E',amount:20}];
+ const s=statistics(clients);assert.equal(s.groups.length,5);assert.equal(s.groups.find(g=>g.group==='E').count,1);assert.equal(s.active,1);assert.equal(s.amount,100);assert.equal(s.allAmount,120);
+});

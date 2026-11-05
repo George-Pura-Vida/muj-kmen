@@ -83,6 +83,16 @@ def run():
      assert anon.call('/account.php?view='+view)[0]==403,view
     assert owner.api('data')[0]==200
     assert not (t/'auth/test-outbox.jsonl').exists()
+    legacy={**c,'id':'legacy-import','group':'Mimo péči'}
+    assert owner.api('import',{'format':'muj-kmen','version':1,'clients':[legacy]})[1]['added']==1
+    assert next(x for x in owner.api('data')[1]['clients'] if x['id']=='legacy-import')['group']=='E'
+    # Simulate a database created before the group merge, then reopen it through the API.
+    with __import__('sqlite3').connect(t/'data/muj-kmen.sqlite') as legacy_db:
+     legacy_db.execute("INSERT INTO clients(id,payload,revision,updated_at) VALUES(?,?,1,?)",('legacy-migration',json.dumps({**c,'id':'legacy-migration','group':'Mimo péči'}),'2026-11-05'))
+     legacy_db.execute("DELETE FROM schema_migrations WHERE name='merge-unassigned-into-E'")
+    migrated=owner.api('data')[1]
+    assert next(x for x in migrated['clients'] if x['id']=='legacy-migration')['group']=='E'
+    assert len(migrated['entries'])==1
     print('PASS: PHP lint; owner CLI setup and login; no registration/recovery/password routes; owner-only data; CSRF; six products; import; conflicts; notes; backup; invalid date.')
    except Exception:
     logs.flush();print((t/'server.log').read_text()[-3000:]);raise

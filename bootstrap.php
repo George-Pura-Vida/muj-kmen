@@ -17,13 +17,26 @@ function database(): PDO {
  $db->exec('CREATE TABLE IF NOT EXISTS clients(id TEXT PRIMARY KEY, payload TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1, updated_at TEXT NOT NULL)');
  $columns=$db->query('PRAGMA table_info(clients)')->fetchAll(PDO::FETCH_ASSOC);if(!in_array('deleted_at',array_column($columns,'name'),true))$db->exec("ALTER TABLE clients ADD COLUMN deleted_at TEXT NOT NULL DEFAULT ''");
  $db->exec('CREATE TABLE IF NOT EXISTS entries(id TEXT PRIMARY KEY, client_id TEXT NOT NULL REFERENCES clients(id), kind TEXT NOT NULL, body TEXT NOT NULL, result TEXT NOT NULL, occurred_at TEXT NOT NULL, created_at TEXT NOT NULL)');
+
+ $db->exec('CREATE TABLE IF NOT EXISTS schema_migrations(name TEXT PRIMARY KEY)');
+ $db->beginTransaction();
+ $q=$db->prepare('SELECT 1 FROM schema_migrations WHERE name=?');$q->execute(['merge-unassigned-into-E']);
+ if(!$q->fetchColumn()){
+  $update=$db->prepare('UPDATE clients SET payload=?,revision=revision+1,updated_at=? WHERE id=?');
+  foreach($db->query('SELECT id,payload FROM clients')->fetchAll(PDO::FETCH_ASSOC) as $row){
+   $payload=json_decode($row['payload'],true,512,JSON_THROW_ON_ERROR);
+   if(($payload['group']??'')==='Mimo péči'){$payload['group']='E';$update->execute([json_encode($payload,JSON_UNESCAPED_UNICODE),gmdate(DATE_ATOM),$row['id']]);}
+  }
+  $db->prepare('INSERT INTO schema_migrations(name) VALUES(?)')->execute(['merge-unassigned-into-E']);
+ }
+ $db->commit();
  return $db;
 }
 function clean_text(mixed $v,int $max=1000): string { if (!is_string($v)) return ''; if (strlen($v)>$max*4) fail(422,'Text je příliš dlouhý.'); return trim($v); }
 function valid_date(mixed $v): string { if ($v===null || $v==='') return ''; if (!is_string($v) || !preg_match('/^\d{4}-\d{2}-\d{2}$/D',$v)) fail(422,'Neplatné datum.'); $dt=DateTimeImmutable::createFromFormat('!Y-m-d',$v); if (!$dt || $dt->format('Y-m-d')!==$v) fail(422,'Neplatné datum.'); return $v; }
 function normal_client(array $c): array {
  $id=(string)($c['id']??''); if (!preg_match('/^[A-Za-z0-9_-]{1,64}$/D',$id)) fail(422,'Neplatné ID klienta.');
- $g=$c['group']??'Mimo péči'; if (!in_array($g,['A','B','C','D','E','Mimo péči'],true)) fail(422,'Neplatná skupina.');
+ $g=$c['group']??'E';if(in_array($g,['Mimo péči','Nezařazení','E · Nezařazení',''],true))$g='E'; if (!in_array($g,['A','B','C','D','E'],true)) fail(422,'Neplatná skupina.');
  $first=clean_text($c['firstName']??'',100);$last=clean_text($c['lastName']??'',150); if ($first==='' && $last==='') fail(422,'Doplňte jméno klienta.');
  $amount=$c['amount']??0; if (!is_numeric($amount) || !is_finite((float)$amount) || (float)$amount<0 || (float)$amount>1e13) fail(422,'Neplatný objem.');
  $products=[];foreach(['gold','silver','funds','bitcoin','swiss','insurance'] as $key){$p=$c['products'][$key]??[]; $state=$p['state']??'verify'; if(!in_array($state,['record','confirmed','interest','verify'],true))fail(422,'Neplatný stav produktu.');$products[$key]=['state'=>$state,'evidence'=>clean_text($p['evidence']??'',2000)];}

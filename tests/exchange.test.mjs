@@ -9,3 +9,8 @@ test('formatted Excel amounts support thousands and Czech and English decimals',
  for(const input of ['1,23,456','12.34.567','-1,000','abc'])assert.throws(()=>amountValue(input),input);
  const rows=[['ID','Jméno','Hodnota Kč'],['101','Test','30,730,434 Kč']];const h=detectHeader(rows);assert.equal(rowsToClients(rows,h.map,h.index)[0].amount,30730434);
 });
+
+test('legacy and blank unassigned groups import into E',()=>{
+ const rows=[['ID','Jméno','Skupina'],['a','Anna','Mimo péči'],['b','Pavel',''],['c','Eva','E']];
+ const h=detectHeader(rows);assert.deepEqual(rowsToClients(rows,h.map,h.index).map(c=>c.group),['E','E','E']);
+});
