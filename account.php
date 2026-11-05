@@ -37,7 +37,7 @@ function profile_fields():void{
     echo '</div>';field('email','E-mail / přihlašovací jméno','email',true,254,'username');field('address','Adresa — ulice, číslo, PSČ a obec (nepovinné)','text',false,500,'street-address');
 }
 ?>
-<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="same-origin"><title><?= h($titles[$view]) ?> | Můj kmen</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/account.css?v=1"><link rel="stylesheet" href="/account-ui.css?v=1"><script defer src="/account.js?v=1"></script></head>
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="same-origin"><title><?= h($titles[$view]) ?> | Můj kmen</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/account.css?v=1"><link rel="stylesheet" href="/account-ui.css?v=1"><script defer src="/account.js?v=1"></script><link rel="stylesheet" href="/privacy.css?v=2"><script type="module" src="/privacy.js?v=2"></script></head>
 <body>
 <header class="account-header"><a class="brand" href="/"><img src="/favicon.svg" width="44" height="44" alt=""><span>MŮJ <strong>KMEN</strong><small>Jiří Janoušek</small></span></a>
 <nav aria-label="Navigace účtu" class="account-nav"><a href="/">📊 Klientská matice</a>
@@ -66,8 +66,7 @@ function profile_fields():void{
 <p class="form-links"><a href="/account.php?view=login">Přihlášení</a></p>
 <?php endif; ?>
 
-<nav class="footer-legal" aria-label="Právní informace"><a href="/account.php?view=privacy">Ochrana osobních údajů</a><a href="https://jirijanousek.cz/" target="_blank" rel="noopener noreferrer">jirijanousek.cz ↗</a></nav>
-<p class="account-footer">© <?= date('Y') ?> Jiří Janoušek · Můj kmen</p></section></main></body></html>
+<footer class="site-common-footer"><div class="site-footer-top"><strong>Můj kmen · Jiří Janoušek</strong><a class="site-footer-support" href="/support.html">💛 Podpořte projekt Můj kmen</a></div><nav class="footer-legal" aria-label="Právní informace"><a href="/legal.php?view=terms">Podmínky používání</a><a href="/legal.php?view=legal">Právní upozornění</a><a href="/legal.php?view=privacy">Ochrana údajů / GDPR</a><a href="/legal.php?view=cookies">Cookies</a><button type="button" data-cookie-settings>Nastavení cookies</button><a href="https://jirijanousek.cz/" target="_blank" rel="noopener noreferrer">jirijanousek.cz ↗</a></nav><p>© <?= date('Y') ?> Jiří Janoušek · Můj kmen</p></footer></section></main></body></html>
 
 
 
