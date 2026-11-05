@@ -1,1 +1,14 @@
-{"name":"muj-kmen","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"node tools/serve.mjs","test":"node --test tests/model.test.mjs","test:api":"python3 tests/api_test.py"},"engines":{"node":">=20"}}
+{
+  "name": "muj-kmen",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node tools/serve.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:api": "python3 tests/api_test.py"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

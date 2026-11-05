@@ -1,40 +1,21 @@
-# Můj kmen
+# Můj kmen – soukromá klientská aplikace
 
-Klientské centrum Jiřího Janouška pro PHP hosting WebKitty. Barevná matice A–E, šest produktů (zlato, stříbro, fondy, Bitcoin, švýcarské stříbro, pojištění), hledání bez diakritiky, filtry, grafy, obchodní a spolupracovní priority, zápisy a plánování kontaktů.
+Produkční PHP aplikace pro jediného správce `jgjanousek@gmail.com`. Veřejná registrace, schvalování dalších účtů, reset hesla, ověřovací tokeny i změny účtu přes web jsou zakázané na serveru. Žádné heslo ani soukromé klientské údaje nepatří do tohoto veřejného repozitáře.
+
+## Účet správce
+
+Na hostingu spusťte v terminálu `php tools/admin-user.php`. Heslo program načítá pouze ze standardního vstupu; neposílejte je v příkazu, URL ani v Git konfiguraci. V terminálu lze skrýt vstup příkazem `stty -echo`, po zadání jej obnovit `stty echo`. Nástroj vytvoří nebo aktualizuje jediný povolený účet, uloží pouze hash, zneplatní staré relace a tokeny. Lze jej použít i pro administrátorskou změnu hesla. Přístup z webu je zakázán. Před prvním použitím nastavte účet tímto nástrojem nebo v privátní databázi `../muj-kmen-accounts/accounts.sqlite`. Existující účet není při nasazení přepsán.
+
+## Import a export
+
+V levém menu je import XLSX, XLS, CSV a JSON záloh (maximálně 12 MB, 10 000 klientů). Excel se nejprve čte lokálně v prohlížeči: vyberte list, řádek záhlaví a přiřazení sloupců, potom zkontrolujte náhled a potvrďte. Původní list `Matice klientů` má přednost; původní ikonové buňky a samostatný list `Evidence produktů` jsou podporované. Bez ID vzniká stabilní identifikátor podle jména; pro shodná jména přiřaďte skutečné ID. Neznámé produktové hodnoty se bezpečně označí k ověření. Obrázky, makra, šifrované soubory a libovolné dokumenty bez řádkové tabulky klientů se nepřevádějí automaticky. Data importu se po potvrzení validují na serveru a importují v transakci; existující ID se nepřepíší. Prioritní příznaky a přesnou zálohu zápisů zachovává JSON záloha; Excel slouží k importu klientské matice a produktové evidence.
+
+Export Excel (.xlsx) a PDF na šířku zahrnuje aktuální filtrovaný výběr (všechny stránky), počty produktů a souhrn. Excel má zvláštní listy pro matici, evidenci a zápisy. PDF má českou diakritiku, barevné skupiny a produktové ikony. Soukromé soubory se nestahují přes cizí službu; knihovny jsou lokální.
 
 ## WebKitty
 
-- Doména: `https://muj-kmen.jirijanousek.cz/`
-- Kořen webu: `/home/sites/1a/1/1f8017897e/muj-kmen/`
-- Git: `https://github.com/George-Pura-Vida/muj-kmen.git`, větev `main`.
-- PHP 8.1+ s PDO SQLite, sessions, ctype, JSON a funkčním odesíláním PHP `mail()`.
-- Apache musí respektovat `.htaccess`. Žádný Node.js ani sestavování nejsou na produkci potřeba.
+Repozitář: `https://github.com/George-Pura-Vida/muj-kmen.git`, **Deployment Branch: main** (větev master neexistuje). Dokumentový kořen musí směřovat do složky repozitáře. PHP 8.2+ se SQLite/PDO. Apache musí respektovat `.htaccess`. Databáze účtu i klientů jsou mimo veřejný kořen; ponechte jejich adresáře při dalším nasazení.
 
-Naklonujte repozitář do uvedeného kořene webu přes Git Version Control. Nesměrujte doménu na celý domácí adresář hostingu.
+## Testy
 
-Data se standardně ukládají **mimo kořen domény**: do sousedních adresářů `muj-kmen-data/` a `muj-kmen-accounts/`. PHP musí mít právo tyto adresáře vytvořit nebo do nich zapisovat. Umístění dat lze změnit pomocí `MK_DATA_DIR` a `MK_AUTH_DIR`; cestu klientské databáze lze též nastavit v lokálním `config.local.php` podle příkladu. Účty Moje renta a Můj kmen používají samostatné databáze, relace i obnovovací odkazy.
-
-## Přihlášení a přístup
-
-Přihlášení, registrace, ikona oka, potvrzení e-mailu, obnova hesla, profil a správa uživatelů vycházejí z modulu aplikace Moje renta. Přihlášení je e-mailem a heslem (minimálně 7 znaků), hesla se ukládají jako hash. Ověřovací odkaz má platnost 24 hodin, obnovovací 30 minut. Změna hesla ukončí původní relace.
-
-Správcem je výhradně ověřený provozovatel uvedený v `AUTH_APPROVER_EMAIL`. Jednorázová aktivace dovoluje pouze tuto pevnou e-mailovou adresu. **Registrace i přihlášení jiných uživatelů jsou serverově zakázané**, a to i pro dříve uložené nebo ručně schválené jiné účty. Povolování dalších uživatelů je vypnuté. Profil správce obsahuje změnu hesla a obnovu přístupu.
-
-Do tohoto veřejného repozitáře nepatří žádná klientská data, databáze, konfigurace ani hesla. Nejsou tu přednastavená produkční hesla. Připravený klientský import je samostatný soukromý JSON soubor. Import přidává nové profily a nepřepisuje existující úpravy; opakování importu nevytváří duplikáty. Záloha zahrnuje klienty i nové zápisy. CSV výběru obsahuje pouze zobrazené klienty a chrání tabulku před vzorci z textových polí.
-
-## Význam ikon a statistik
-
-Produktová ikona znamená záznam v podkladech; může vycházet i z pouhého štítku. Nepotvrzuje současnou držbu ani počet účtů. Zelený telefon znamená ověřit produkt nebo otevřené jednání, nikoli automaticky klientovi produkt nabídnout. Původní důkaz je v detailu klienta v záložce Podklady. Ruční potvrzení produktu se ukládá samostatně.
-
-Hodnota v péči v přehledu zahrnuje A–E, nikoli „Mimo péči“. Graf hodnoty ukazuje i nezařazené zvlášť. Částky jsou hodnoty dle dodaného exportu; nejsou rozdělením mezi produkty ani úplným oceněním portfolia. Souhrny produktů zahrnují i pojištění. Grafy péče používají skutečně uložené zápisy, nikoli vymyšlenou historii. Priority jsou náměty k ověření, nikoli objednávky nebo prognóza provize.
-
-## Testování
-
-```sh
-node --test tests/model.test.mjs
-python3 tests/api_test.py
-```
-
-Druhý test potřebuje PHP CLI s PDO SQLite a ctype. Spouští lokální server s dočasnými databázemi a zachytává e-maily do lokální testovací schránky; nikomu je neodesílá. Ověřuje registraci, verifikaci, čekající přístup, schvalování, CSRF, import, duplicity, konkurenční úpravy, skutečné uložení zápisů, zálohu a zneplatnění relací po změně hesla. `MUJKMEN_TEST_MODE` funguje jen na PHP vývojovém serveru z localhostu; na produkčním PHP-FPM/Apache testovací režim neplatí.
-
-Ukázka s výhradně fiktivními jmény je dostupná na `/?demo=1`; ukládání je v ní vypnuté. Přesné klientské údaje se nesmí vkládat do `assets/demo.js`.
+`npm test` a `python3 tests/api_test.py` (vyžaduje PHP CLI, pdo_sqlite). Testy používají pouze fiktivní data a oddělené dočasné databáze. `PHP_BIN` a `PHP_EXTENSION_DIR` lze nastavit pro vlastní lokální runtime. Ukázka `/?demo=1` obsahuje pouze fiktivní klienty a nemůže ukládat ani importovat do serveru.

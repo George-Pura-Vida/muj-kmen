@@ -37,10 +37,9 @@ def run():
     password='Test-only-strong-password-374!'
     def register(s,email,name):
      return s.form('register',{'email':email,'first_name':name,'last_name':'Test','company':'','ico':'','dic':'','phone':'+420777111222','address':'','password':password,'password_confirm':password,'privacy':'yes'})
-    assert register(owner,'jgjanousek@gmail.com','Owner')[0]==200
-    outbox=lambda:[json.loads(x) for x in (t/'auth/test-outbox.jsonl').read_text().splitlines()]
-    token=next(x for x in outbox() if x['to']=='jgjanousek@gmail.com' and x['purpose']=='verify')['url'].split('#token=')[1]
-    assert owner.form('verify',{'token':token})[0]==200
+    subprocess.run(args+[str(ROOT/'tools/admin-user.php')],input=password+'\n',text=True,env=env,check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    assert register(owner,'jgjanousek@gmail.com','Owner')[0]==403
+    assert owner.form('login',{'email':'jgjanousek@gmail.com','password':password})[0]==200
     b=owner.api('bootstrap')[1];assert b['user']['isAdmin'];owner.csrf=b['csrf']
     assert owner.api('import',{'format':'muj-kmen','version':1,'clients':[]},csrf=False)[0]==403
     c={'id':'test-1','firstName':'Anna','lastName':'Testová','group':'A','amount':123456.78,'products':{},'nextContact':'2026-11-05','nextAction':'Ověřit domluvu'}
@@ -60,12 +59,13 @@ def run():
     other=Session(base);other.token();assert register(other,'pending@example.test','Other')[0]==403
     other.form('login',{'email':'pending@example.test','password':password});assert other.api('data')[0]==401
     assert __import__('sqlite3').connect(t/'auth/accounts.sqlite').execute('SELECT COUNT(*) FROM users').fetchone()[0]==1
-    recovery=Session(base);recovery.token();recovery.form('forgot',{'email':'jgjanousek@gmail.com'})
-    tok=[x for x in outbox() if x['to']=='jgjanousek@gmail.com' and x['purpose']=='reset'][-1]['url'].split('#token=')[1]
-    recovery.form('reset',{'token':tok,'password':'Different-test-password-642!','password_confirm':'Different-test-password-642!'})
-    assert owner.api('data')[0]==401
-    assert recovery.form('reset',{'token':tok,'password':password,'password_confirm':password})[0] in [200,403]
-    print('PASS: PHP syntax; unauthenticated denial; registration and verification; owner-only registration and login; six products; CSRF; import duplicate handling; optimistic locking; notes persisted and idempotent; backup; invalid date; reset invalidates sessions.')
+    for action in ['register','forgot','resend','reset','verify','password','profile','confirm-email','approval']:
+     assert owner.form(action,{'email':'jgjanousek@gmail.com','password':password})[0]==403,action
+    for view in ['register','forgot','reset','verify','confirm-email']:
+     assert anon.call('/account.php?view='+view)[0]==403,view
+    assert owner.api('data')[0]==200
+    assert not (t/'auth/test-outbox.jsonl').exists()
+    print('PASS: PHP lint; owner CLI setup and login; no registration/recovery/password routes; owner-only data; CSRF; six products; import; conflicts; notes; backup; invalid date.')
    except Exception:
     logs.flush();print((t/'server.log').read_text()[-3000:]);raise
    finally:server.terminate();server.wait(timeout=10)

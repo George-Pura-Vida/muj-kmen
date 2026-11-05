@@ -173,24 +173,7 @@ function auth_notify_registration(string $email, string $firstName, string $last
 function auth_process(?array $u): void {
     auth_csrf(); $action = auth_text('action',30,true); $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     auth_limit('post-ip',$ip,150,900);
-    if ($action === 'register') {
-        auth_limit('register-ip',$ip,10,3600);
-        $email=auth_email();
-        if ($email !== AUTH_APPROVER_EMAIL) { http_response_code(403); throw new DomainException('Registrace dalších uživatelů není povolena. Aplikace je určena pouze správci.'); }
-        $p=auth_profile(); $password=auth_password();
-        if (auth_text('privacy',3) !== 'yes') throw new DomainException('Potvrďte seznámení se zpracováním údajů.');
-        $existing=auth_query('SELECT * FROM users WHERE email=?',[$email])->fetch(PDO::FETCH_ASSOC);
-        if (!$existing) {
-            $now=time();
-            try { auth_query('INSERT INTO users(email,password_hash,first_name,last_name,company,ico,dic,phone,address,created_at,updated_at,approval_status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',array_merge([$email,auth_hash($password)],$p,[$now,$now,'pending']));
-                $uid=(int)auth_db()->lastInsertId();
-                $token=auth_token($uid,'verify');
-                if (!auth_mail($email,'verify',$token)) { auth_query('DELETE FROM users WHERE id=? AND verified=0',[$uid]); throw new DomainException('Ověřovací e-mail se nyní nepodařilo odeslat. Zkuste registraci později nebo nás kontaktujte.'); }
-                auth_notify_registration($email,$p[0],$p[1],$p[2],$p[5]);
-            } catch (PDOException $e) { if ($e->getCode() !== '23000') throw $e; }
-        }
-        auth_redirect('login','Pokud je adresa nová, odeslali jsme ověřovací odkaz. Nejprve potvrďte svůj e-mail odkazem ve zprávě. Po potvrzení e-mailu přístup ke klientským údajům povolí správce. Pokud účet už máte, přihlaste se nebo obnovte heslo.');
-    }
+    if (!in_array($action, ['login','logout'], true)) { http_response_code(403); throw new DomainException('Registrace a změny účtu jsou vypnuté. Heslo spravuje pouze administrátor na hostingu.'); }
     if ($action === 'login') {
         $email=auth_email(); auth_limit('login-email',$email,10,900); auth_limit('login-ip',$ip,40,900);
         $p=$_POST['password']??'';
@@ -203,93 +186,9 @@ function auth_process(?array $u): void {
         if (password_needs_rehash($found['password_hash'],PASSWORD_DEFAULT)) auth_query('UPDATE users SET password_hash=? WHERE id=?',[auth_hash($p),$found['id']]);
         auth_login($found); header('Location: /',true,303);exit;
     }
-    if (in_array($action,['forgot','resend'],true)) {
-        $email=auth_email();auth_limit('recovery-ip',$ip,15,3600);auth_limit('recovery-email',$email,3,1800);
-        $found=auth_query('SELECT * FROM users WHERE email=?',[$email])->fetch(PDO::FETCH_ASSOC);
-        if ($found) { $purpose=$found['verified']?'reset':'verify';$token=auth_token((int)$found['id'],$purpose);if(!auth_mail($email,$purpose,$token))error_log('MUJ KMEN account mail transport failed'); }
-        auth_redirect('login','Pokud pro tuto adresu existuje účet, odeslali jsme odkaz k obnově hesla nebo potvrzení registrace. Zkontrolujte i spam.');
-    }
-    if ($action === 'verify') {
-        $verifiedId = null;
-        auth_consume('verify',function($t)use(&$verifiedId){auth_query('UPDATE users SET verified=1,updated_at=? WHERE id=?',[time(),$t['user_id']]);$verifiedId=(int)$t['user_id'];});
-        $verifiedUser=auth_query('SELECT * FROM users WHERE id=?',[$verifiedId])->fetch(PDO::FETCH_ASSOC);
-        if($verifiedUser && auth_approved($verifiedUser)) {
-            if(!auth_is_admin($verifiedUser)) auth_notify_access($verifiedUser,'approved');
-            auth_login($verifiedUser);
-            header('Location: /',true,303);exit;
-        }
-        auth_redirect('login','E-mail byl ověřen, ale přístup k účtu je omezen správcem. Kontaktujte nás na info@jirijanousek.cz.');
-    }
-    if ($action === 'reset') {
-        auth_limit('reset-ip',$ip,20,1800);$hash=auth_hash(auth_password());
-        auth_consume('reset',function($t)use($hash){auth_query('UPDATE users SET password_hash=?,session_version=session_version+1,updated_at=? WHERE id=?',[$hash,time(),$t['user_id']]);auth_query('DELETE FROM tokens WHERE user_id=?',[$t['user_id']]);});
-        auth_logout();auth_redirect('login','Heslo bylo změněno a všechna přihlášení ukončena. Přihlaste se novým heslem.');
-    }
-    if (!$u) { http_response_code(401);throw new DomainException('Nejprve se přihlaste.'); }
-    if ($action === 'delete-account') {
-        if (!auth_is_admin($u)) { http_response_code(403); throw new DomainException('Účet může smazat pouze správce.'); }
-        $target=auth_text('user_id',20,true);
-        if (!ctype_digit($target)) throw new DomainException('Neplatný účet.');
-        if (auth_text('confirm_delete',3) !== 'yes') throw new DomainException('Potvrďte nevratné smazání účtu.');
-        $confirmation=strtolower(auth_text('confirm_email',254,true));
-        $db=auth_db(); $db->exec('BEGIN IMMEDIATE');
-        try {
-            $targetUser=auth_query('SELECT * FROM users WHERE id=?',[(int)$target])->fetch(PDO::FETCH_ASSOC);
-            if (!$targetUser) throw new DomainException('Tento účet již neexistuje.');
-            if (strtolower($targetUser['email'])===AUTH_APPROVER_EMAIL || (int)$target===(int)$u['id']) throw new DomainException('Správcovský ani vlastní účet nelze smazat.');
-            if (!hash_equals(strtolower($targetUser['email']),$confirmation)) throw new DomainException('Pro potvrzení opište přesnou e-mailovou adresu účtu.');
-            auth_query('DELETE FROM approval_audit WHERE user_id=? OR actor_id=?',[(int)$target,(int)$target]);
-            foreach (['login-email','recovery-email'] as $scope) auth_query('DELETE FROM limits WHERE key=?',[hash('sha256',$scope.':'.$targetUser['email'])]);
-            // Foreign-key cascade removes verification, reset and email-change tokens.
-            auth_query('DELETE FROM users WHERE id=?',[(int)$target]);
-            $db->exec('COMMIT');
-        } catch (Throwable $e) { $db->exec('ROLLBACK'); throw $e; }
-        auth_redirect('approvals','Účet a jeho údaje byly trvale smazány. Původní přihlášení a ověřovací odkazy již nelze použít.');
-    }
-    if ($action === 'approval') {
-        http_response_code(403); throw new DomainException('Povolování dalších účtů je vypnuté. Aplikace je vyhrazena pouze správci.');
-        if (!auth_is_admin($u)) { http_response_code(403); throw new DomainException('Tuto akci může provést pouze správce.'); }
-        $target=auth_text('user_id',20,true); $decision=auth_text('decision',20,true);
-        if (!ctype_digit($target) || !in_array($decision,['approved','rejected','pending'],true)) throw new DomainException('Neplatná změna přístupu.');
-        $db=auth_db(); $db->exec('BEGIN IMMEDIATE');
-        try {
-            $targetUser=auth_query('SELECT * FROM users WHERE id=?',[(int)$target])->fetch(PDO::FETCH_ASSOC);
-            if (!$targetUser || auth_is_admin($targetUser) || (int)$target===(int)$u['id']) throw new DomainException('Tento účet nelze takto upravit.');
-            auth_query('UPDATE users SET approval_status=?,approved_by=?,approved_at=?,session_version=session_version+1,updated_at=? WHERE id=?',[$decision,$u['id'],time(),time(),(int)$target]);
-            auth_query('INSERT INTO approval_audit(actor_id,user_id,decision,created_at) VALUES(?,?,?,?)',[$u['id'],(int)$target,$decision,time()]);
-            $db->exec('COMMIT');
-        } catch (Throwable $e) { $db->exec('ROLLBACK'); throw $e; }
-        if (($targetUser['approval_status'] ?? '') !== $decision) auth_notify_access($targetUser, $decision);
-        auth_redirect('approvals','Přístup byl aktualizován. Předchozí relace tohoto účtu byly ukončeny.');
-    }
-    if ($action === 'logout') { auth_logout();auth_redirect('login','Byli jste odhlášeni.'); }
-    if ($action === 'profile') {
-        $p=auth_profile();$email=auth_email();
-        if ($email!==$u['email']) {
-            if (auth_is_admin($u)) throw new DomainException('E-mail správce nelze změnit v profilu. Kontaktujte provozovatele aplikace.');
-            auth_check_current($u);
-            if(auth_query('SELECT id FROM users WHERE email=? AND id<>?',[$email,$u['id']])->fetch())throw new DomainException('Tuto e-mailovou adresu nelze použít.');
-            $token=auth_token((int)$u['id'],'email',$email);
-            if(!auth_mail($email,'email',$token))throw new DomainException('Potvrzovací e-mail se nepodařilo odeslat. Adresa nebyla změněna.');
-        }
-        auth_query('UPDATE users SET first_name=?,last_name=?,company=?,ico=?,dic=?,phone=?,address=?,updated_at=? WHERE id=?',array_merge($p,[time(),$u['id']]));
-        auth_redirect('profile',$email!==$u['email']?'Údaje uloženy. Změnu e-mailu dokončete odkazem na nové adrese; do té doby platí původní přihlášení.':'Údaje byly uloženy.');
-    }
-    if ($action === 'confirm-email') {
-        auth_consume('email',function($t)use($u){
-            if((int)$t['user_id']!==(int)$u['id'])throw new DomainException('Přihlaste se k účtu, pro který byl odkaz vystaven.');
-            if(auth_query('SELECT id FROM users WHERE email=? AND id<>?',[$t['value'],$u['id']])->fetch())throw new DomainException('Tuto e-mailovou adresu již nelze použít.');
-            auth_query('UPDATE users SET email=?,session_version=session_version+1,updated_at=? WHERE id=?',[$t['value'],time(),$u['id']]);
-            auth_query('DELETE FROM tokens WHERE user_id=?',[$u['id']]);
-        });auth_logout();auth_redirect('login','E-mail byl změněn. Přihlaste se novou adresou a stávajícím heslem.');
-    }
-    if ($action === 'password') {
-        auth_check_current($u);$hash=auth_hash(auth_password());
-        auth_query('UPDATE users SET password_hash=?,session_version=session_version+1,updated_at=? WHERE id=?',[$hash,time(),$u['id']]);
-        auth_query('DELETE FROM tokens WHERE user_id=?',[$u['id']]);auth_logout();auth_redirect('login','Heslo bylo změněno. Přihlaste se znovu.');
-    }
-    throw new DomainException('Neznámá akce.');
+    if ($action === 'logout') { auth_logout(); auth_redirect('login','Byli jste odhlášeni.'); }
 }
+
 function auth_require(): array {
     try { $u=auth_user();if(!$u)auth_redirect('login');return $u; }
     catch(Throwable $e){http_response_code(503);exit('Přihlášení je dočasně nedostupné. Kontakt: info@jirijanousek.cz');}

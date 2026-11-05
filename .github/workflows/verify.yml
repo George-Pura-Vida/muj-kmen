@@ -12,6 +12,6 @@ jobs:
       - name: JavaScript syntax and model tests
         run: |
           node --check assets/app.js
-          node --test tests/model.test.mjs
+          npm test
       - name: PHP integration tests
         run: python3 tests/api_test.py
