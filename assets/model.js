@@ -25,3 +25,14 @@ export function statistics(clients,entries=[],today=dateToday()){
 }
 export function csvCell(v){let s=String(v??'');if(/^[=+@\-\t\r]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';}
 export function toCsv(clients){return '\ufeff'+[['ID','Jméno','Příjmení','Skupina','Hodnota Kč',...PRODUCTS.map(x=>x[1]),'Další krok','Další kontakt'],...clients.map(c=>[c.id,c.firstName,c.lastName,c.group,c.amount,...PRODUCTS.map(([k])=>c.products[k]?.state||'verify'),c.nextAction,c.nextContact])].map(r=>r.map(csvCell).join(';')).join('\r\n');}
+
+export function donutStatistics(clients){
+ const products=PRODUCTS.map(([key,name])=>({key,name,count:clients.filter(c=>isProduct(c.products[key])).length}));
+ const potential=[
+  {key:'trade',name:'Pouze obchodní růst',count:clients.filter(c=>c.tradePriority&&!c.cooperationPriority).length},
+  {key:'cooperation',name:'Pouze spolupráce',count:clients.filter(c=>c.cooperationPriority&&!c.tradePriority).length},
+  {key:'both',name:'Růst i spolupráce',count:clients.filter(c=>c.tradePriority&&c.cooperationPriority).length},
+  {key:'unmarked',name:'Zatím neoznačeno',count:clients.filter(c=>!c.tradePriority&&!c.cooperationPriority).length}
+ ];
+ return {products,productTotal:products.reduce((n,p)=>n+p.count,0),potential,clientTotal:clients.length};
+}

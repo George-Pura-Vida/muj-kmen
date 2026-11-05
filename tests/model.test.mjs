@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {filterClients,statistics,toCsv} from '../assets/model.js';
+import {filterClients,statistics,donutStatistics,toCsv} from '../assets/model.js';
 import {demoClients} from '../assets/demo.js';
 test('accent-insensitive search and ID search',()=>{assert.equal(filterClients(demoClients,{query:'prochazkova'}).length,1);assert.equal(filterClients(demoClients,{query:'demo-18'}).length,1);assert.equal(filterClients(demoClients,{query:'not-present'}).length,0);});
 test('product icon and phone filters are complementary',()=>{const a=filterClients(demoClients,{product:'insurance',state:'record'}),b=filterClients(demoClients,{product:'insurance',state:'verify'});assert.equal(a.length+b.length,demoClients.length);assert.equal(new Set([...a,...b].map(c=>c.id)).size,demoClients.length);});
@@ -11,4 +11,15 @@ test('CSV neutralizes formula injection and escapes quotes',()=>{const s=toCsv([
 test('five groups reconcile and E represents unassigned clients',()=>{
  const clients=[{...demoClients[0],group:'A',amount:100},{...demoClients[1],group:'E',amount:20}];
  const s=statistics(clients);assert.equal(s.groups.length,5);assert.equal(s.groups.find(g=>g.group==='E').count,1);assert.equal(s.active,1);assert.equal(s.amount,100);assert.equal(s.allAmount,120);
+});
+
+test('donut totals count products and mutually exclusive client priorities',()=>{
+ const a={...demoClients[0],tradePriority:true,cooperationPriority:false};
+ const b={...demoClients[1],tradePriority:false,cooperationPriority:true};
+ const c={...demoClients[2],tradePriority:true,cooperationPriority:true};
+ const d={...demoClients[3],tradePriority:false,cooperationPriority:false};
+ const s=donutStatistics([a,b,c,d]);assert.equal(s.clientTotal,4);assert.deepEqual(s.potential.map(p=>p.count),[1,1,1,1]);
+ assert.equal(s.productTotal,s.products.reduce((n,p)=>n+p.count,0));assert.ok(s.productTotal>4);
+ const empty=donutStatistics([]);assert.equal(empty.productTotal,0);assert.equal(empty.potential.reduce((n,p)=>n+p.count,0),0);
+ const subset=donutStatistics([c]);assert.equal(subset.potential.find(p=>p.key==='both').count,1);
 });
