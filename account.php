@@ -42,7 +42,7 @@ function profile_fields():void{
 <header class="account-header"><a class="brand" href="/"><img src="/favicon.svg" width="44" height="44" alt=""><span>MŮJ <strong>KMEN</strong><small>Jiří Janoušek</small></span></a>
 <nav aria-label="Navigace účtu" class="account-nav"><a href="/">📊 Klientská matice</a>
 <?php if($user): ?><a href="/account.php?view=profile">👤 Můj účet</a>
-<?php else: ?><a href="/account.php?view=login">🔐 Přihlášení</a><?php endif; ?>
+<?php else: ?><a href="/account.php?view=login">🔐 Přihlášení</a><?php endif; ?><a class="account-nav-support" href="/support.html">❤️ Podpořte projekt Můj kmen</a>
 </nav></header>
 <main class="account-layout<?= $view==='approvals'?' admin-layout':'' ?>"><aside class="welcome">
 <p class="eyebrow">MŮJ KMEN · KLIENTI NA JEDNOM MÍSTĚ</p><h1>Vaši klienti.<br><em>Vaše dlouhodobé vztahy.</em></h1>
@@ -61,7 +61,7 @@ function profile_fields():void{
 <h3>Jaké údaje a proč</h3><p>Pro registraci, přihlášení, správu profilu a bezpečnost účtu zpracováváme jméno, příjmení, e-mail, telefon, případně firmu, adresu, IČ a DIČ. Hesla uchováváme výhradně jako jednosměrné hashe; neposíláme je e-mailem. Údaje slouží pro provoz účtu, obnovu přístupu a nezbytná oznámení, nikoli automaticky pro marketing.</p>
 <h3>Úložiště a nezbytné cookies</h3><p>Údaje účtů jsou uloženy mimo veřejný web na hostingu provozovatele. Pro přihlášení je nezbytná zabezpečená relační cookie a ochranný token formuláře; bez nich zabezpečený účet nefunguje. Zpracování vychází z poskytování požadované služby a oprávněného zájmu na zabezpečení.</p>
 <h3>Doba uchování a Vaše práva</h3><p>Údaje vedeme po dobu existence účtu a případně déle v rozsahu právních povinností. Můžete požádat o přístup, opravu, výmaz, omezení zpracování či uplatnit další práva podle GDPR. Před vyřízením ověříme totožnost; stížnost lze podat Úřadu pro ochranu osobních údajů. Hosting a doručovatel e-mailů mohou údaje technicky zpracovávat v rozsahu potřebném pro provoz.</p>
-<p>Klientské profily, produkty a zápisy se ukládají na serveru provozovatele. Přístup má výhradně jediný správce; registrace ani přihlášení dalších osob nejsou povoleny.</p>
+<p><strong>Dobrovolná podpora projektu:</strong> E-mail a případné jméno uvedené pro jednorázové poděkování se předávají do soukromého systému Můj DIP pro ověření přijaté platby z Fio banky. Anonymní QR platba nevyžaduje e-mail. Údaje se nepoužívají pro marketing.</p><p>Klientské profily, produkty a zápisy se ukládají na serveru provozovatele. Přístup má výhradně jediný správce; registrace ani přihlášení dalších osob nejsou povoleny.</p>
 <p><a href="https://jirijanousek.cz/ochrana-osobnich-udaju/" target="_blank" rel="noopener noreferrer">Další informace o ochraně osobních údajů</a>.</p></div>
 <p class="form-links"><a href="/account.php?view=login">Přihlášení</a></p>
 <?php endif; ?>
