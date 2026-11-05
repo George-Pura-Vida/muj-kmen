@@ -1,6 +1,6 @@
 export const PRODUCTS=[['gold','Zlato'],['silver','Stříbro'],['funds','Fondy'],['bitcoin','Bitcoin'],['swiss','Švýcarské stříbro'],['insurance','Pojištění']];
 export const GROUPS=['A','B','C','D','E'];
-export const COLORS={A:'#d6b65b',B:'#5897d0',C:'#95b181',D:'#b9c1c2',E:'#cf8b82'};
+export const COLORS={A:'#d6b65b',B:'#5897d0',C:'#95b181',D:'#e89536',E:'#cf8b82'};
 export const isProduct=p=>!!p&&['record','confirmed'].includes(p.state);
 export const fold=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs');
 export const dateToday=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Prague'}).format(new Date());

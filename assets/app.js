@@ -1,5 +1,5 @@
-import {FIELDS,detectHeader,rowsToClients,excelBook,exportPDF} from './exchange.js?v=20261105-merged';
-import {PRODUCTS,GROUPS,COLORS,isProduct,filterClients,statistics,toCsv,dateToday} from './model.js?v=20261105-merged';
+import {FIELDS,detectHeader,rowsToClients,excelBook,exportPDF} from './exchange.js?v=20261105-orange';
+import {PRODUCTS,GROUPS,COLORS,isProduct,filterClients,statistics,toCsv,dateToday} from './model.js?v=20261105-orange';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const countClients=n=>n+' '+(n===1?'klient':n>1&&n<5?'klienti':'klientů');
