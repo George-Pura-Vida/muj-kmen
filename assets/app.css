@@ -51,3 +51,21 @@ main{margin-left:264px}
 @media(max-width:1200px){.chart-grid{grid-template-columns:1fr}.donut-layout{flex-direction:row}.chart-legend{grid-template-columns:1fr}.product-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:800px){.topbar{gap:10px}.today{font-size:12px}.top-search input{font-size:13px}.page-heading p,.page-heading>.primary{font-size:13px}.eyebrow{font-size:10px}.product-grid{grid-template-columns:repeat(2,1fr)}.product-card-top,.product-card-bottom{font-size:13px}.section-top .muted{font-size:12px}.section-top{flex-wrap:wrap}.section-top .muted{max-width:none;text-align:left}.donut-layout{flex-wrap:wrap}.bar-row{grid-template-columns:80px 1fr 95px;font-size:13px}.entry-item .when{font-size:12px}.dialog-tabs button{font-size:13px}.bulk-actions button{flex:1;min-width:140px}}
 @media print{.bulk-actions,.row-actions,.selection-cell,.chart-tooltip{display:none!important}}
+
+/* Keep wide tables inside the content area beside the fixed navigation. */
+:root{--sidebar-width:264px}
+html,body{max-width:100%;overflow-x:clip}
+#shell,main,.content,.view{min-width:0}
+.sidebar{width:var(--sidebar-width)}
+main{margin-left:var(--sidebar-width);width:calc(100% - var(--sidebar-width));max-width:calc(100% - var(--sidebar-width))}
+.content{width:100%}
+.table-wrap{width:100%;max-width:100%;min-width:0;overflow:hidden}
+.table-scroll{width:100%;max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;isolation:isolate;scrollbar-gutter:stable}
+.table-top{flex-wrap:wrap;gap:10px;overflow-wrap:anywhere}
+.pagination{flex-wrap:wrap}
+.client-table th:first-child,.client-table td:first-child{position:sticky;left:0;z-index:2;min-width:64px;width:64px;background:#fff}
+.client-table th:nth-child(2),.client-table td:nth-child(2){position:sticky;left:64px;z-index:2;min-width:190px;background:#fff;box-shadow:4px 0 5px #18342d0a}
+.client-table th:first-child,.client-table th:nth-child(2){background:#fafbf6;z-index:3}
+.client-table tr[data-client]:hover td:first-child,.client-table tr[data-client]:hover td:nth-child(2){background:#f7f9f1}
+@media(max-width:800px){.sidebar{width:min(290px,88vw)}main{width:100%;max-width:100%;margin-left:0}.client-table th:nth-child(2),.client-table td:nth-child(2){min-width:150px}}
+@media print{main{margin:0;width:100%;max-width:100%}.table-scroll{overflow:visible}.client-table{min-width:0}.client-table th:first-child,.client-table td:first-child,.client-table th:nth-child(2),.client-table td:nth-child(2){position:static;box-shadow:none}}
