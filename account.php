@@ -37,12 +37,12 @@ function profile_fields():void{
     echo '</div>';field('email','E-mail / přihlašovací jméno','email',true,254,'username');field('address','Adresa — ulice, číslo, PSČ a obec (nepovinné)','text',false,500,'street-address');
 }
 ?>
-<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="same-origin"><title><?= h($titles[$view]) ?> | Můj kmen</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/account.css?v=1"><link rel="stylesheet" href="/account-ui.css?v=1"><script defer src="/account.js?v=1"></script></head>
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="same-origin"><title><?= h($titles[$view]) ?> | Můj kmen</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/account.css?v=1"><link rel="stylesheet" href="/account-ui.css?v=1"><script defer src="/account.js?v=1"></script><link rel="stylesheet" href="/privacy.css?v=2"><script type="module" src="/privacy.js?v=2"></script></head>
 <body>
 <header class="account-header"><a class="brand" href="/"><img src="/favicon.svg" width="44" height="44" alt=""><span>MŮJ <strong>KMEN</strong><small>Jiří Janoušek</small></span></a>
 <nav aria-label="Navigace účtu" class="account-nav"><a href="/">📊 Klientská matice</a>
 <?php if($user): ?><a href="/account.php?view=profile">👤 Můj účet</a>
-<?php else: ?><a href="/account.php?view=login">🔐 Přihlášení</a><?php endif; ?>
+<?php else: ?><a href="/account.php?view=login">🔐 Přihlášení</a><?php endif; ?><a class="account-nav-support" href="/support.html">❤️ Podpořte projekt Můj kmen</a>
 </nav></header>
 <main class="account-layout<?= $view==='approvals'?' admin-layout':'' ?>"><aside class="welcome">
 <p class="eyebrow">MŮJ KMEN · KLIENTI NA JEDNOM MÍSTĚ</p><h1>Vaši klienti.<br><em>Vaše dlouhodobé vztahy.</em></h1>
@@ -61,13 +61,12 @@ function profile_fields():void{
 <h3>Jaké údaje a proč</h3><p>Pro registraci, přihlášení, správu profilu a bezpečnost účtu zpracováváme jméno, příjmení, e-mail, telefon, případně firmu, adresu, IČ a DIČ. Hesla uchováváme výhradně jako jednosměrné hashe; neposíláme je e-mailem. Údaje slouží pro provoz účtu, obnovu přístupu a nezbytná oznámení, nikoli automaticky pro marketing.</p>
 <h3>Úložiště a nezbytné cookies</h3><p>Údaje účtů jsou uloženy mimo veřejný web na hostingu provozovatele. Pro přihlášení je nezbytná zabezpečená relační cookie a ochranný token formuláře; bez nich zabezpečený účet nefunguje. Zpracování vychází z poskytování požadované služby a oprávněného zájmu na zabezpečení.</p>
 <h3>Doba uchování a Vaše práva</h3><p>Údaje vedeme po dobu existence účtu a případně déle v rozsahu právních povinností. Můžete požádat o přístup, opravu, výmaz, omezení zpracování či uplatnit další práva podle GDPR. Před vyřízením ověříme totožnost; stížnost lze podat Úřadu pro ochranu osobních údajů. Hosting a doručovatel e-mailů mohou údaje technicky zpracovávat v rozsahu potřebném pro provoz.</p>
-<p>Klientské profily, produkty a zápisy se ukládají na serveru provozovatele. Přístup má výhradně jediný správce; registrace ani přihlášení dalších osob nejsou povoleny.</p>
+<p><strong>Dobrovolná podpora projektu:</strong> E-mail a případné jméno uvedené pro jednorázové poděkování se předávají do soukromého systému Můj DIP pro ověření přijaté platby z Fio banky. Anonymní QR platba nevyžaduje e-mail. Údaje se nepoužívají pro marketing.</p><p>Klientské profily, produkty a zápisy se ukládají na serveru provozovatele. Přístup má výhradně jediný správce; registrace ani přihlášení dalších osob nejsou povoleny.</p>
 <p><a href="https://jirijanousek.cz/ochrana-osobnich-udaju/" target="_blank" rel="noopener noreferrer">Další informace o ochraně osobních údajů</a>.</p></div>
 <p class="form-links"><a href="/account.php?view=login">Přihlášení</a></p>
 <?php endif; ?>
 
-<nav class="footer-legal" aria-label="Právní informace"><a href="/account.php?view=privacy">Ochrana osobních údajů</a><a href="https://jirijanousek.cz/" target="_blank" rel="noopener noreferrer">jirijanousek.cz ↗</a></nav>
-<p class="account-footer">© <?= date('Y') ?> Jiří Janoušek · Můj kmen</p></section></main></body></html>
+<footer class="site-common-footer"><div class="site-footer-top"><strong>Můj kmen · Jiří Janoušek</strong><a class="site-footer-support" href="/support.html">💛 Podpořte projekt Můj kmen</a></div><nav class="footer-legal" aria-label="Právní informace"><a href="/legal.php?view=terms">Podmínky používání</a><a href="/legal.php?view=legal">Právní upozornění</a><a href="/legal.php?view=privacy">Ochrana údajů / GDPR</a><a href="/legal.php?view=cookies">Cookies</a><button type="button" data-cookie-settings>Nastavení cookies</button><a href="https://jirijanousek.cz/" target="_blank" rel="noopener noreferrer">jirijanousek.cz ↗</a></nav><p>© <?= date('Y') ?> Jiří Janoušek · Můj kmen</p></footer></section></main></body></html>
 
 
 

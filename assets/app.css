@@ -76,3 +76,8 @@ main{margin-left:var(--sidebar-width);width:calc(100% - var(--sidebar-width));ma
 .kpi:nth-child(2) .kpi-icon{color:#187042;background:#ddf3e4;border-color:#9fd0b0}
 .kpi:nth-child(3) .kpi-icon{color:#946000;background:#fff0c2;border-color:#dfbc58}
 .kpi:nth-child(4) .kpi-icon{color:#9b2c48;background:#fce1e8;border-color:#e7a5b7}
+
+/* Vínové tlačítko podpory zůstává přístupné v menu i na mobilu. */
+.sidebar-bottom a.side-support-cta{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:11px 12px;margin:8px 0 12px;border-radius:10px;border:1px solid #b06580;background:#80324d;color:#fff!important;font-size:13px;font-weight:800;text-decoration:none;box-shadow:0 5px 15px #36162424;text-align:center;line-height:1.35}
+.sidebar-bottom a.side-support-cta:hover,.sidebar-bottom a.side-support-cta:focus-visible{background:#66243b;color:#fff!important}
+@media print{.sidebar-bottom a.side-support-cta{display:none!important}}

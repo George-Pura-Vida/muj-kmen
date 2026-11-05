@@ -12,6 +12,12 @@ jobs:
       - name: JavaScript syntax and model tests
         run: |
           node --check assets/app.js
+          node --check support.js
+          node --check support-payment.js
+          node --check vendor/qrcodegen.js
+          node --check privacy.js
+          php -l legal.php
           npm test
+          node --test support.test.mjs privacy-notice.test.mjs
       - name: PHP integration tests
         run: python3 tests/api_test.py
