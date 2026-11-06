@@ -81,3 +81,22 @@ main{margin-left:var(--sidebar-width);width:calc(100% - var(--sidebar-width));ma
 .sidebar-bottom a.side-support-cta{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:11px 12px;margin:8px 0 12px;border-radius:10px;border:1px solid #b06580;background:#80324d;color:#fff!important;font-size:13px;font-weight:800;text-decoration:none;box-shadow:0 5px 15px #36162424;text-align:center;line-height:1.35}
 .sidebar-bottom a.side-support-cta:hover,.sidebar-bottom a.side-support-cta:focus-visible{background:#66243b;color:#fff!important}
 @media print{.sidebar-bottom a.side-support-cta{display:none!important}}
+
+
+/* JJ UI 2026-11-06: mobile sticky header + accessible drawer */
+.topbar{background:rgba(255,255,255,.96);border-bottom-color:#dce5de;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.panel,.kpi,.product-card{border-color:#dee7e0;box-shadow:0 8px 26px #1736290d}
+.primary,.secondary,.sidebar nav button,.side-action{transition:background-color .18s,border-color .18s,box-shadow .18s}
+.primary:focus-visible,.mobile-menu:focus-visible,.sidebar nav button:focus-visible{outline:3px solid #d6b65b;outline-offset:3px}
+.mobile-shade[hidden]{display:none!important}
+@media(max-width:800px){
+ main>.topbar{position:sticky;top:0;z-index:55;min-height:66px;height:66px;padding:0 13px;gap:11px;box-shadow:0 6px 20px #19372b19}
+ .topbar .mobile-menu{display:inline-grid;place-items:center;flex:0 0 46px;width:46px;height:46px;min-height:46px;background:#244b3f;color:#fff;border:1px solid #507364;border-radius:12px;font-size:23px;box-shadow:0 4px 13px #193c2f25}
+ .topbar .mobile-menu:hover{background:#315d4d}
+ .topbar .top-search{min-width:0}
+ .mobile-shade:not([hidden]){display:block;position:fixed;inset:0;background:rgba(13,30,23,.53);z-index:70;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+ .sidebar{z-index:80;max-height:100dvh;height:100dvh;padding-bottom:max(15px,env(safe-area-inset-bottom))}
+}
+@media(max-width:480px){.topbar .today{display:none}}
+@media print{main>.topbar{position:static;box-shadow:none}.mobile-shade{display:none!important}}
+@media(prefers-reduced-motion:reduce){.primary,.secondary,.sidebar nav button,.side-action{transition:none}}
