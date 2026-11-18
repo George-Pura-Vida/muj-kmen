@@ -80,14 +80,36 @@ def run():
     # The original UI API still needs its normal authenticated owner session.
     assert Session(base).api('data')[0]==401
     assert owner.api('data')[0]==200
+    # Exercise the real private worker over HTTP, not a mocked transport.
+    spec=importlib.util.spec_from_file_location('sync_worker',ROOT/'tools/muj_kmen_sync.py')
+    worker=importlib.util.module_from_spec(spec);spec.loader.exec_module(worker)
+    worker.ORIGIN=base  # Isolated loopback server only; production origin is unchanged.
+    state=worker.open_state(tmp/'worker-state')
+    credentials={'readToken':read,'writeToken':write}
+    assert worker.synchronize(state,credentials)['clients']==1
+    queued={**plan,'operationId':'worker-plan','revision':rev+2,'nextAction':'Fictional worker next step'}
+    worker.enqueue(state,queued)
+    assert worker.synchronize(state,credentials,True)['outbox']=={'sent':1}
+    assert sync(read)[1]['clients'][0]['nextAction']=='Fictional worker next step'
+    queued_note={**note,'operationId':'worker-entry','revision':rev+3}
+    worker.enqueue(state,queued_note)
+    assert worker.synchronize(state,credentials,True)['outbox']=={'sent':2}
+    assert worker.synchronize(state,credentials,True)['entries']==2
+    # A real UI change must block the already-reviewed queued plan.
+    worker.enqueue(state,{**queued,'operationId':'worker-conflict','revision':rev+4})
+    current=owner.api('data')[1]['clients'][0]
+    assert owner.api('client',{'client':{**current,'nextAction':'Fictional manual edit'},'revision':current['revision']})[0]==200
+    assert worker.synchronize(state,credentials,True)['outbox']=={'conflict':1,'sent':2}
+    assert sync(read)[1]['clients'][0]['nextAction']=='Fictional manual edit'
+    state.close()
     # A client deleted in the UI cannot be restored/changed by the service API.
-    assert owner.api('delete-clients',{'clients':[{'id':'fake-1','revision':rev+2}]})[0]==200
-    assert sync(write,{**plan,'operationId':'deleted','revision':rev+3})[0]==404
+    assert owner.api('delete-clients',{'clients':[{'id':'fake-1','revision':rev+5}]})[0]==200
+    assert sync(write,{**plan,'operationId':'deleted','revision':rev+6})[0]==404
     assert sync(read)[1]['clients']==[] and sync(read)[1]['entries']==[]
     keys_file=tmp/'auth/diana-sync.json';old=json.loads(keys_file.read_text());keys_file.write_text(json.dumps({**old,'expiresAt':1}))
     assert sync(read)[0]==401
     keys_file.unlink();assert sync(write)[0]==503
-    print('PASS: disabled default, scoped credentials, browser rejection, plans, source-linked entries, idempotency, conflicts, deleted-client protection, expiration and revocation.')
+    print('PASS: disabled default, scoped credentials, browser rejection, plans, source-linked entries, idempotency, conflicts, deleted-client protection, expiration, revocation and real worker HTTP roundtrips.')
    except Exception:
     # Log PHP diagnostics only; fixtures contain no real clients or live secrets.
     logs.flush();print((tmp/'server.log').read_text()[-1800:]);raise
