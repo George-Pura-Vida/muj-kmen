@@ -1,0 +1,14 @@
+[Unit]
+Description=Diana 00 bidirectional Muj kmen synchronization
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/ai-agenti/muj-kmen/tools/muj_kmen_sync.py run --push
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.local/share/diana/muj-kmen

@@ -20,4 +20,7 @@ jobs:
           npm test
           node --test support.test.mjs privacy-notice.test.mjs
       - name: PHP integration tests
-        run: python3 tests/api_test.py
+        run: |
+          python3 tests/api_test.py
+          python3 tests/sync_api_test.py
+          python3 tests/sync_worker_test.py

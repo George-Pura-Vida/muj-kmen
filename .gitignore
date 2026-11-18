@@ -7,3 +7,6 @@
 /.env
 /.sites-runtime/
 /.openai/
+
+__pycache__/
+*.pyc
