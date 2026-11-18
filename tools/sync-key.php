@@ -4,8 +4,8 @@ declare(strict_types=1);
 if(PHP_SAPI!=='cli'){http_response_code(404);exit;}
 require __DIR__.'/../auth/bootstrap.php';
 $destination=$argv[1]??'';
-$days=filter_var($argv[2]??'90',FILTER_VALIDATE_INT,['options'=>['min_range'=>1,'max_range'=>180]]);
-if($days===false){fwrite(STDERR,"Validity must be between 1 and 180 days.\n");exit(1);}
+$days=filter_var($argv[2]??'90',FILTER_VALIDATE_INT,['options'=>['min_range'=>1,'max_range'=>720]]);
+if($days===false){fwrite(STDERR,"Validity must be between 1 and 720 days.\n");exit(1);}
 if($destination===''||$destination[0]!=='/'||file_exists($destination)){fwrite(STDERR,"Provide a new absolute credential-file path outside the web root.\n");exit(1);}
 $parent=realpath(dirname($destination));$root=realpath(__DIR__.'/..');
 if(!$parent||$parent===$root||str_starts_with($parent,$root.DIRECTORY_SEPARATOR)){fwrite(STDERR,"Credentials must remain outside the web root.\n");exit(1);}

@@ -45,11 +45,11 @@ def run():
     owner=Session(base);owner.token();owner.form('login',{'email':'jgjanousek@gmail.com','password':password});owner.csrf=owner.api('bootstrap')[1]['csrf']
     assert owner.api('import',{'format':'muj-kmen','version':1,'clients':[{'id':'fake-1','firstName':'Fake','lastName':'Test','group':'A','amount':1,'products':{}}]})[0]==200
     credential=tmp/'client.json'
-    provision=subprocess.run(php+[str(ROOT/'tools/sync-key.php'),str(credential),'180'],env=env,check=True,capture_output=True,text=True)
+    provision=subprocess.run(php+[str(ROOT/'tools/sync-key.php'),str(credential),'720'],env=env,check=True,capture_output=True,text=True)
     keys=json.loads(credential.read_text());read,write=keys['readToken'],keys['writeToken']
     assert read not in provision.stdout and write not in provision.stdout
-    assert 180*86400-10 <= keys['expiresAt']-int(time.time()) <= 180*86400
-    assert '180 days' in provision.stdout
+    assert 720*86400-10 <= keys['expiresAt']-int(time.time()) <= 720*86400
+    assert '720 days' in provision.stdout
     assert credential.stat().st_mode&0o777==0o600
     server_config=(tmp/'auth/diana-sync.json').read_text()
     assert read not in server_config and write not in server_config
