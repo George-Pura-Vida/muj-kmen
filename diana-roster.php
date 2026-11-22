@@ -7,7 +7,8 @@ header('X-Content-Type-Options: nosniff');
 function dianaRosterDeny(int $code): never { http_response_code($code); echo '{"ok":false}'; exit; }
 $https=in_array(strtolower((string)($_SERVER['HTTPS']??'')),['on','1'],true);
 if(!$https||($_SERVER['REQUEST_METHOD']??'')!=='POST')dianaRosterDeny(404);
-// Reuse existing Diana full CRM authorization, no separate feature flag.\nif (getenv('DIANA_CRM_WRITE') !== 'all')dianaRosterDeny(403);
+// Reuse existing Diana full CRM authorization, no separate feature flag.
+if (getenv('DIANA_CRM_WRITE') !== 'all')dianaRosterDeny(403);
 $hash=(string)getenv('DIANA_NOTE_TOKEN_SHA256');
 $authorization=(string)($_SERVER['HTTP_AUTHORIZATION']??'');
 if(!preg_match('/^[a-f0-9]{64}$/D',$hash))dianaRosterDeny(404);
