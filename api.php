@@ -1,10 +1,13 @@
 <?php
 declare(strict_types=1);
 require __DIR__.'/bootstrap.php';
+require __DIR__.'/diana-contact.php';
 header('Content-Type: application/json; charset=utf-8');
 try {
  $db=database();$action=$_GET['action']??'bootstrap';$method=$_SERVER['REQUEST_METHOD'];
- $diana=$action==='diana_note';
+ $dianaContact=$action==='diana_contact';
+ $diana=$action==='diana_note'||$dianaContact;
+ $dianaAll=getenv('DIANA_CRM_WRITE')==='all';
  if($diana){
   if($method!=='POST' || !in_array(strtolower((string)($_SERVER['HTTPS']??'')),['on','1'],true))fail(404,'Požadavek nebyl nalezen.');
   $dianaHash=(string)getenv('DIANA_NOTE_TOKEN_SHA256');
@@ -21,6 +24,13 @@ try {
   $in=json_decode(file_get_contents('php://input'),true,512,JSON_THROW_ON_ERROR);if(!is_array($in))fail(422,'Neplatná data.');
  }
  if($action==='bootstrap' && $method==='GET'){echo json_encode(['version'=>MK_VERSION,'csrf'=>$_SESSION['csrf'],'user'=>$mkUser?['id'=>$mkUser['id'],'name'=>$mkUser['first_name'].' '.$mkUser['last_name'],'isAdmin'=>auth_is_admin($mkUser)]:null],JSON_UNESCAPED_UNICODE);exit;}
+ if($dianaContact){
+  if(($_SERVER['HTTP_ORIGIN']??'')!=='')fail(403,'Nepovolený původ požadavku.');
+  if(!$dianaAll)fail(403,'Přístup Diany ke kartám není povolen.');
+  echo json_encode(dianaContactOperation($db,1,$in,static function($id,$expected,$changes,$key) use ($db){
+   return dianaSaveKmenContact($db,$id,$expected,$changes,$key);
+  }),JSON_UNESCAPED_UNICODE);exit;
+ }
  if(!$diana && !$mkUser)fail(401,'Přihlaste se prosím.');
  if($action==='logout' && $method==='POST'){auth_logout();echo '{"ok":true}';exit;}
  if($action==='data' && $method==='GET'){echo json_encode(['clients'=>clients_list($db),'entries'=>$db->query('SELECT entries.* FROM entries JOIN clients ON clients.id=entries.client_id WHERE clients.deleted_at=\'\' ORDER BY occurred_at DESC,created_at DESC')->fetchAll(PDO::FETCH_ASSOC)],JSON_UNESCAPED_UNICODE);exit;}
@@ -61,10 +71,11 @@ try {
  if(($action==='entry' || $diana) && $method==='POST'){
   if($diana){
    $allowed=(string)getenv('DIANA_NOTE_CLIENT_ID');
-   if($allowed==='' || ($in['clientId']??null)!==$allowed)fail(403,'Klient není povolen pro Dianu.');
+   if(!$dianaAll && ($allowed==='' || ($in['clientId']??null)!==$allowed))fail(403,'Klient není povolen pro Dianu.');
    $in=array_intersect_key($in,array_flip(['id','clientId','body','date']));
    if(!is_string($in['id']??null) || !str_starts_with($in['id'],'diana_'))fail(422,'Neplatné ID zápisu Diany.');
   }
+  if($diana && (!is_string($in['clientId']??null) || !preg_match('/^[A-Za-z0-9_-]{1,64}$/D',$in['clientId'])))fail(422,'Neplatné ID klienta.');
   $id=clean_text($in['id']??'',80);if(!preg_match('/^[A-Za-z0-9_-]{1,80}$/D',$id))fail(422,'Neplatné ID zápisu.');$client=(string)($in['clientId']??'');$body=clean_text($in['body']??'',5000);$kind=$in['kind']??'note';$date=valid_date($in['date']??'');if($body===''||$date===''||!in_array($kind,['phone','meeting','email','note'],true))fail(422,'Doplňte text, datum a druh zápisu.');
   $db->beginTransaction();$q=$db->prepare('SELECT payload,revision FROM clients WHERE id=? AND deleted_at=\'\'');$q->execute([$client]);$r=$q->fetch(PDO::FETCH_ASSOC);if(!$r){$db->rollBack();fail(404,'Klient nebyl nalezen.');}
   $q=$db->prepare('SELECT client_id,kind,body,occurred_at FROM entries WHERE id=?');$q->execute([$id]);
@@ -79,4 +90,4 @@ try {
   $db->prepare('UPDATE clients SET payload=?,revision=revision+1,updated_at=? WHERE id=?')->execute([json_encode($c,JSON_UNESCAPED_UNICODE),gmdate(DATE_ATOM),$client]);$db->commit();echo '{"ok":true}';exit;
  }
  fail(404,'Požadavek nebyl nalezen.');
-}catch(JsonException $e){fail(422,'Soubor neobsahuje platná JSON data.');}catch(InvalidArgumentException $e){if(isset($db)&&$db->inTransaction())$db->rollBack();fail(422,$e->getMessage());}catch(Throwable $e){if(isset($db)&&$db->inTransaction())$db->rollBack();error_log('Muj kmen: '.$e->getMessage());fail(500,'Operaci se nepodařilo dokončit. Data nebyla potvrzena; zkuste to znovu.');}
+}catch(DomainException $e){fail($e->getCode(),$e->getMessage());}catch(JsonException $e){fail(422,'Soubor neobsahuje platná JSON data.');}catch(InvalidArgumentException $e){if(isset($db)&&$db->inTransaction())$db->rollBack();fail(422,$e->getMessage());}catch(Throwable $e){if(isset($db)&&$db->inTransaction())$db->rollBack();error_log('Muj kmen: '.$e->getMessage());fail(500,'Operaci se nepodařilo dokončit. Data nebyla potvrzena; zkuste to znovu.');}
