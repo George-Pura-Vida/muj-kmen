@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once dirname(__DIR__).'/totp.php';
 // This directory is denied by Apache; public entry points explicitly include this file.
 const AUTH_ORIGIN = 'https://muj-kmen.jirijanousek.cz';
 const AUTH_APPROVER_EMAIL = 'jgjanousek@gmail.com';
@@ -68,6 +69,7 @@ function auth_boot(): void {
 }
 function auth_user(): ?array {
     if (empty($_SESSION['uid'])) return null;
+    if (($_SESSION['mfa_verified']??null)!==(int)$_SESSION['uid']) { auth_logout(); return null; }
     $now = time();
     if ($now - ($_SESSION['seen'] ?? 0) > AUTH_IDLE || $now - ($_SESSION['started'] ?? 0) > AUTH_ABSOLUTE) {
         auth_logout(); return null;
@@ -84,11 +86,12 @@ function auth_is_admin(array $u): bool {
 function auth_approved(array $u): bool {
     return auth_is_admin($u);
 }
-function auth_login(array $u): void {
+function auth_login(array $u, bool $mfaVerified=false): void {
     if (!auth_is_admin($u)) { http_response_code(403); throw new DomainException('Aplikace je vyhrazena pouze správci.'); }
-    session_regenerate_id(true);
+    if (!$mfaVerified) { mfa_begin($u); header('Location: /mfa.php',true,303); exit; }
+    if (!session_regenerate_id(true)) throw new RuntimeException('Session unavailable');
     $_SESSION = ['uid' => (int)$u['id'], 'version' => (int)$u['session_version'],
-        'started' => time(), 'seen' => time(), 'csrf' => bin2hex(random_bytes(32))];
+        'started' => time(), 'seen' => time(), 'mfa_verified'=>(int)$u['id'], 'csrf' => bin2hex(random_bytes(32))];
 }
 function auth_logout(): void {
     $_SESSION = []; session_regenerate_id(true); $_SESSION['csrf'] = bin2hex(random_bytes(32));

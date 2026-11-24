@@ -1,4 +1,5 @@
 """End-to-end PHP/SQLite tests. Uses isolated temporary data, no outgoing mail."""
+import base64, hashlib, hmac, struct
 import contextlib, http.cookiejar, json, os, pathlib, re, socket, subprocess, tempfile, time, urllib.request, urllib.parse, urllib.error
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 class Session:
@@ -15,7 +16,18 @@ class Session:
  def token(self):
   status,html=self.call('/account.php?view=login');assert status==200
   self.csrf=re.search(r'name="csrf" value="([a-f0-9]+)"',html).group(1);return self.csrf
- def form(self,action,fields=None):return self.call('/account.php?view='+('profile' if action=='approval' else action),dict(action=action,csrf=self.csrf,**(fields or {})))
+ def form(self,action,fields=None):
+  status,html=self.call('/account.php?view='+('profile' if action=='approval' else action),dict(action=action,csrf=self.csrf,**(fields or {})))
+  if action=='login' and status==200 and 'id="mfa-qr"' in html:
+   assert self.api('data')[0]==401, 'Password alone must not grant CRM access'
+   # A request to data may clear no pending state (uid is absent).
+   secret=re.search(r'<code>([A-Z2-7]{32})</code>',html).group(1)
+   token=re.search(r'name="csrf" value="([a-f0-9]+)"',html).group(1)
+   mac=hmac.new(base64.b32decode(secret),struct.pack('>Q',int(time.time())//30),hashlib.sha1).digest()
+   offset=mac[-1]&15;code=str((struct.unpack('>I',mac[offset:offset+4])[0]&0x7fffffff)%1000000).zfill(6)
+   status,html=self.call('/mfa.php',{'csrf':token,'code':code})
+   assert 'Ověřování je zapnuté' in html,html
+  return status,html
  def api(self,action,data=None,csrf=True):
   status,text=self.call('/api.php?action='+action,data,True,csrf);return status,json.loads(text)
 def run():
