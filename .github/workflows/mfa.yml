@@ -1,0 +1,13 @@
+name: Google Authenticator security
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  mfa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y php-cli php-sqlite3
+      - run: php -l totp.php && php -l mfa.php && php -l mfa-page.php && php -l auth/bootstrap.php
+      - run: node --check mfa-qr.js
+      - run: php mfa.test.php
